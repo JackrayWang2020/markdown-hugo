@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>携程 on SoulLand</title>
+    <link>http://localhost:1313/tags/%E6%90%BA%E7%A8%8B/</link>
+    <description>Recent content in 携程 on SoulLand</description>
+    <generator>Hugo</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Fri, 08 May 2026 00:00:00 +0000</lastBuildDate>
+    <atom:link href="http://localhost:1313/tags/%E6%90%BA%E7%A8%8B/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Apollo 配置中心与 Logstash 管理：能力与局限</title>
+      <link>http://localhost:1313/posts/apollo-config-center-and-logstash/</link>
+      <pubDate>Fri, 08 May 2026 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/posts/apollo-config-center-and-logstash/</guid>
+      <description>Apollo 是携程开源的分布式配置管理中心，不是 Logstash 管理平台。本文分析 Apollo 管理 Logstash 配置的实践方案、优势与局限。</description>
+    </item>
+  </channel>
+</rss>

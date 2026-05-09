@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto" data-theme="auto">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Unity 2D 小游戏开发指南：从零到抖音发布 | SoulLand</title>
+<meta name="keywords" content="Unity, 2D游戏, 抖音小游戏, C#, 游戏开发">
+<meta name="description" content="从 Unity Hub 安装到抖音小游戏发布的完整指南：环境搭建、技术储备、开发流程、抖音适配与上架。">
+<meta name="author" content="Jackray">
+<link rel="canonical" href="http://localhost:1313/posts/unity-2d-game-dev-guide-for-douyin/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.css" rel="preload stylesheet" as="style">
+<link rel="icon" href="http://localhost:1313/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:1313/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:1313/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://localhost:1313/apple-touch-icon.png">
+<link rel="mask-icon" href="http://localhost:1313/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="http://localhost:1313/posts/unity-2d-game-dev-guide-for-douyin/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+                color-scheme: dark;
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .toc {
+                background: var(--entry);
+            }
+        }
+
+    </style>
+</noscript>
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.querySelector("html").dataset.theme = 'dark';
+    } else if (localStorage.getItem("pref-theme") === "light") {
+       document.querySelector("html").dataset.theme = 'light';
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.querySelector("html").dataset.theme = 'dark';
+    } else {
+        document.querySelector("html").dataset.theme = 'light';
+    }
+
+</script><meta property="og:url" content="http://localhost:1313/posts/unity-2d-game-dev-guide-for-douyin/">
+  <meta property="og:site_name" content="SoulLand">
+  <meta property="og:title" content="Unity 2D 小游戏开发指南：从零到抖音发布">
+  <meta property="og:description" content="从 Unity Hub 安装到抖音小游戏发布的完整指南：环境搭建、技术储备、开发流程、抖音适配与上架。">
+  <meta property="og:locale" content="zh_cn">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2026-05-09T00:00:00+00:00">
+    <meta property="article:modified_time" content="2026-05-09T00:00:00+00:00">
+    <meta property="article:tag" content="Unity">
+    <meta property="article:tag" content="2D游戏">
+    <meta property="article:tag" content="抖音小游戏">
+    <meta property="article:tag" content="C#">
+    <meta property="article:tag" content="游戏开发">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Unity 2D 小游戏开发指南：从零到抖音发布">
+  <meta name="twitter:description" content="从 Unity Hub 安装到抖音小游戏发布的完整指南：环境搭建、技术储备、开发流程、抖音适配与上架。">
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "http://localhost:1313/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Unity 2D 小游戏开发指南：从零到抖音发布",
+      "item": "http://localhost:1313/posts/unity-2d-game-dev-guide-for-douyin/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Unity 2D 小游戏开发指南：从零到抖音发布",
+  "name": "Unity 2D 小游戏开发指南：从零到抖音发布",
+  "description": "从 Unity Hub 安装到抖音小游戏发布的完整指南：环境搭建、技术储备、开发流程、抖音适配与上架。",
+  "keywords": [
+    "Unity", "2D游戏", "抖音小游戏", "C#", "游戏开发"
+  ],
+  "articleBody": "一、环境搭建 1.1 安装 Unity Editor 启动 Unity Hub unity-hub 安装 Editor：推荐 Unity 2022.3 LTS（长期支持，抖音 SDK 兼容性最好） 安装时勾选模块：\n✅ Linux Build Support (IL2CPP) ✅ WebGL Build Support（抖音小游戏核心） ✅ Visual Studio / VS Code（代码编辑器） ✅ 中文语言包 激活许可证：Unity Hub → 设置 → 许可证 → 个人版（免费，年收入 \u003c 10 万美元） 1.2 VS Code 配置 # 安装 C# 开发工具 code --install-extension ms-dotnettools.csharp code --install-extension unity.unity-debug Unity → Edit → Preferences → External Editor → 选择 VS Code\n1.3 项目创建 Unity Hub → 新建项目 → 选择 2D(Core) 模板 → 命名 → 创建\n不要选 2D URP，那个是给高端 2D 的，小游戏用 Core 就够了。\n二、必须储备的技术 2.1 C# 基础（1-2 周） 这是 Unity 的脚本语言，必须掌握：\n优先级 内容 用途 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ P0 变量、类型、运算符 基础中的基础 P0 if/else、for/while 控制流 P0 函数、参数、返回值 代码组织 P0 类、对象、继承 面向对象 P1 枚举 enum 状态机 P1 协程 IEnumerator 动画、延迟、计时器 P1 委托 delegate / Action 事件系统 P1 泛型 List\u003cT\u003e 数据管理 P2 接口 interface 解耦 P2 序列化 [Serializable] 存档 推荐学习路径：\nB站搜\"C# 入门\"（3-5小时速通） 边做游戏边学，不要纯看视频 2.2 Unity 核心概念（1 周） 概念 说明 类比 GameObject 游戏中的物体 舞台上的演员 Component 挂在物体上的功能 演员的技能 Transform 位置/旋转/缩放 演员站在哪 MonoBehaviour 脚本基类 演员的剧本 Prefab 预制体，可复用 演员的模板 Scene 场景 舞台布景 Asset 资源（图片/音频/脚本） 道具库 Tag / Layer 标签/层级 演员分类 2.3 Unity 2D 核心（1 周） Sprite → 2D 图片素材 SpriteRenderer → 显示图片 Rigidbody2D → 2D 物理引擎（重力/碰撞） Collider2D → 2D 碰撞体 Animator → 动画状态机 Animation → 关键帧动画 Canvas → UI 系统 Tilemap → 2D 地图编辑 2.4 必须掌握的 Unity API // 每帧执行 void Update() { } // 物理帧（固定间隔，处理物理） void FixedUpdate() { } // 碰撞检测 void OnCollisionEnter2D(Collision2D col) { } void OnTriggerEnter2D(Collider2D col) { } // 输入 Input.GetKeyDown(KeyCode.Space) Input.GetAxisRaw(\"Horizontal\") // 移动 transform.Translate(Vector3.right * speed * Time.deltaTime) rigidbody2D.velocity = new Vector2(moveX * speed, rb.velocity.y) // 实例化/销毁 Instantiate(prefab, position, rotation) Destroy(gameObject, delay) // 查找 GameObject.Find(\"Name\") GetComponent() FindObjectOfType() // 协程（延迟/计时） StartCoroutine(MyCoroutine()); IEnumerator MyCoroutine() { yield return new WaitForSeconds(2f); // 2秒后执行 } // 场景切换 SceneManager.LoadScene(\"SceneName\"); // 存档 PlayerPrefs.SetInt(\"Score\", 100); PlayerPrefs.GetInt(\"Score\", 0); 2.5 抖音小游戏特殊要求 技术 说明 WebGL 构建 抖音小游戏基于 WebGL 触屏操作 不依赖键盘，全触屏 包体控制 首包 \u003c 20MB，总包 \u003c 200MB 适配比例 竖屏 9:16 或横屏 16:9 抖音 SDK 登录、分享、广告、录屏 内存控制 手机端 \u003c 1GB 内存占用 三、开发流程 3.1 推荐的第一款游戏：Flappy Bird 类 为什么选这个：\n代码量最小（200 行 C#） 只需要 3 个素材（鸟、管道、背景） 涵盖核心机制：物理、碰撞、计分、UI 1-3 天可以完成 3.2 完整开发步骤 Step 1: 素材准备 ├── 背景图（960×540 或 1080×1920） ├── 角色 Sprite（带动画帧） ├── 障碍物/道具 └── 音效 BGM（免版权：freesound.org） Step 2: 场景搭建 ├── 创建 GameObject ├── 添加 SpriteRenderer ├── 添加 Rigidbody2D / Collider2D └── 设置 Tag / Layer Step 3: 脚本编写 ├── PlayerController.cs 玩家控制 ├── ObstacleSpawner.cs 障碍生成 ├── GameManager.cs 游戏状态/计分 └── UIManager.cs UI 交互 Step 4: UI 制作 ├── Canvas → Screen Space - Overlay ├── 开始界面（标题 + 开始按钮） ├── 游戏中 HUD（分数） └── 结束界面（分数 + 重新开始） Step 5: 打磨 ├── 粒子效果（得分/死亡） ├── 音效 ├── 动画（角色飞/旋转） └── 难度递增 Step 6: WebGL 构建 └── File → Build Settings → WebGL → Build 3.3 典型脚本示例 PlayerController.cs：\nusing UnityEngine; public class PlayerController : MonoBehaviour { public float jumpForce = 5f; private Rigidbody2D rb; void Start() { rb = GetComponent(); } void Update() { if (Input.GetMouseButtonDown(0)) { rb.velocity = Vector2.zero; rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse); } } void OnCollisionEnter2D(Collision2D col) { GameManager.Instance.GameOver(); } } GameManager.cs：\nusing UnityEngine; using UnityEngine.SceneManagement; public class GameManager : MonoBehaviour { public static GameManager Instance; public int score; public bool isGameOver; void Awake() { Instance = this; } public void AddScore() { if (isGameOver) return; score++; } public void GameOver() { isGameOver = true; } public void Restart() { SceneManager.LoadScene(SceneManager.GetActiveScene().name); } } 四、抖音小游戏适配 4.1 抖音小游戏开发流程 Unity WebGL 构建 → 转换为抖音小游戏格式（使用 douyin-convert 工具） → 抖音开发者工具调试 → 提交审核 → 上架 4.2 抖音小游戏 SDK # 抖音官方 Unity SDK https://github.com/nicewarm/DouyinMiniGameUnity 核心能力：\n能力 API 用途 登录 tt.login() 获取用户身份 分享 tt.shareAppMessage() 社交传播 广告 tt.createRewardedVideoAd() 变现 录屏 tt.getGameRecorderManager() 短视频传播 排行榜 tt.setUserCloudStorage() 竞技社交 支付 tt.pay() 内购 4.3 构建优化 // 抖音小游戏对 WebGL 构建的特殊要求 // 1. 压缩格式：Brotli // Unity → Project Settings → Player → WebGL → Compression Format → Brotli // 2. 代码剥离：High // Unity → Project Settings → Player → Managed Stripping Level → High // 3. IL2CPP（必须） // Unity → Project Settings → Player → Scripting Backend → IL2CPP // 4. 包体优化 // - 使用 Sprite Atlas 打包图集 // - 压缩纹理（ASTC/ETC2） // - 移除未使用的模块 // - Addressables 按需加载 4.4 抖音开发者账号 注册：https://developer.open-douyin.com/ 创建小游戏应用 获取 AppID 下载抖音开发者工具（仅 Windows/Mac，Linux 需用 Windows 虚拟机或借电脑） 注意：抖音开发者工具目前只有 Windows 和 Mac 版本，Linux 不支持。 构建好的 WebGL 包需要在 Windows/Mac 上用开发者工具转换和调试。\n五、技术储备路线图 5.1 时间规划 第 1 周：C# 基础 + Unity 界面熟悉 ├── C# 语法速通（变量/循环/类/继承） ├── Unity 界面操作（Hierarchy/Inspector/Scene/Game） └── 跟着做一个简单 Demo 第 2 周：2D 游戏核心 ├── 物理系统（Rigidbody2D / Collider2D） ├── 动画系统（Animator / Animation） ├── UI 系统（Canvas / Button / Text） └── 完成 Flappy Bird 克隆 第 3 周：完整游戏 ├── 素材制作（Aseprite / Piskel） ├── 音效集成 ├── 关卡设计 ├── 存档系统 └── 打磨发布 第 4 周：抖音适配 ├── WebGL 构建 ├── 抖音 SDK 集成 ├── 开发者工具调试 └── 提交审核 5.2 技能树 Unity 2D 小游戏开发 ├── 编程 │ ├── C# 基础 ★★★★★ │ ├── 面向对象 ★★★★ │ ├── 设计模式（单例/状态机/观察者）★★★ │ └── 协程/异步 ★★★ ├── Unity 引擎 │ ├── 2D 物理系统 ★★★★★ │ ├── 动画系统 ★★★★ │ ├── UI 系统 ★★★★★ │ ├── 音频系统 ★★★ │ ├── 粒子系统 ★★★ │ └── 场景管理 ★★★ ├── 美术 │ ├── 像素画基础 ★★★ │ ├── Sprite 动画帧 ★★★ │ ├── Tilemap 地图 ★★★ │ └── UI 设计 ★★★ └── 发布 ├── WebGL 构建 ★★★★★ ├── 抖音 SDK ★★★★ ├── 包体优化 ★★★★ └── 性能优化 ★★★ 六、免费素材资源 资源 网址 说明 Kenney kenney.nl/assets 最全的免费 2D 素材 OpenGameArt opengameart.org 开源游戏素材 Itch.io itch.io/game-assets/free 独立游戏素材 Freesound freesound.org 免费音效 Piskel piskelapp.com 在线像素画编辑器 Aseprite aseprite.org 像素画神器（付费） Unity Asset Store assetstore.unity.com 免费专区 七、避坑指南 7.1 常见新手坑 坑 解法 碰撞不生效 检查两个物体都有 Collider2D，至少一个有 Rigidbody2D 触发器 vs 碰撞体 Trigger 穿透用 OnTriggerEnter2D，碰撞用 OnCollisionEnter2D 移动卡顿 物理移动放 FixedUpdate，用 velocity 而不是 AddForce UI 点击穿透 EventSystem 组件不能删 手机触屏无效 用 Input.GetMouseButtonDown(0)，触屏和鼠标通用 包体太大 Sprite Atlas + 代码剥离 + 压缩纹理 WebGL 黑屏 检查浏览器控制台报错，通常是内存不足 7.2 抖音小游戏特殊坑 坑 解法 开发者工具无 Linux 版 借 Windows 电脑或用虚拟机 WebGL 构建失败 切换 IL2CPP + 清 Library 重新构建 首包超 20MB Addressables 分包加载 分享功能不生效 需要在抖音后台配置分享素材 审核被拒 先看抖音小游戏审核规范，注意无版号不能内购 八、推荐学习资源 8.1 视频 资源 说明 B站 M_Studio 最适合新手的 Unity 2D 教程 B站 麦扣 M_Studio 2D RPG 系列教程 Unity Learn 官方 免费系统课程 YouTube Brackeys 经典英文教程（虽已停更但仍经典） 8.2 文档 资源 网址 Unity 官方文档 docs.unity3d.com 抖音小游戏文档 developer.open-douyin.com/docs C# 官方教程 learn.microsoft.com/zh-cn/dotnet/csharp 8.3 推荐做游戏顺序 1. Flappy Bird（1-3天） → 学物理、碰撞、UI 2. 2048（2-3天） → 学逻辑、动画、UI 3. 消消乐（1-2周） → 学算法、特效、关卡 4. 跑酷游戏（1-2周） → 学对象池、地图生成、难度曲线 5. 自己的创意（2-4周） → 综合实战 最重要的是：尽快发布第一个游戏，哪怕很丑很简陋。发布比完美更重要。\n",
+  "wordCount" : "991",
+  "inLanguage": "en",
+  "datePublished": "2026-05-09T00:00:00Z",
+  "dateModified": "2026-05-09T00:00:00Z",
+  "author":{
+    "@type": "Person",
+    "name": "Jackray"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://localhost:1313/posts/unity-2d-game-dev-guide-for-douyin/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "SoulLand",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://localhost:1313/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+<body id="top">
+    <header class="header">
+    <nav class="header-nav">
+        <div class="logo">
+            <a href="http://localhost:1313/" accesskey="h" title="SoulLand (Alt + H)">
+                <img src="http://localhost:1313/apple-touch-icon.png" alt="" aria-label="logo"
+                    height="35">SoulLand</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" class="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg class="moon" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg class="sun" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu" class="menu">
+            <li>
+                <a href="http://localhost:1313/posts/" title="📝 文章">
+                    <span>📝 文章</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/tags/" title="🏷️ 标签">
+                    <span>🏷️ 标签</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/archives/" title="📁 归档">
+                    <span>📁 归档</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/search/" title="🔍 搜索 (Alt &#43; /)" accesskey=/>
+                    <span>🔍 搜索</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <nav class="breadcrumbs" role="navigation" aria-label="Breadcrumb">
+            <a href="/">Home</a>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-right">
+                <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+            <a href="/posts/">Posts</a>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-right">
+        <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+</nav>
+    <h1 class="post-title entry-hint-parent">
+      Unity 2D 小游戏开发指南：从零到抖音发布
+    </h1>
+    <div class="post-meta">
+
+<span title='2026-05-09 00:00:00 +0000 UTC'>May 9, 2026</span>&nbsp;·&nbsp;<span>5 min</span>&nbsp;·&nbsp;<span>Jackray</span>
+
+</div>
+  </header> <details class="toc"  open>
+    <summary accesskey="c" title="(Alt + C)">
+        <span class="title">Table of Contents</span>
+    </summary>
+
+    <div class="inner"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#一环境搭建">一、环境搭建</a>
+      <ul>
+        <li><a href="#11-安装-unity-editor">1.1 安装 Unity Editor</a></li>
+        <li><a href="#12-vs-code-配置">1.2 VS Code 配置</a></li>
+        <li><a href="#13-项目创建">1.3 项目创建</a></li>
+      </ul>
+    </li>
+    <li><a href="#二必须储备的技术">二、必须储备的技术</a>
+      <ul>
+        <li><a href="#21-c-基础1-2-周">2.1 C# 基础（1-2 周）</a></li>
+        <li><a href="#22-unity-核心概念1-周">2.2 Unity 核心概念（1 周）</a></li>
+        <li><a href="#23-unity-2d-核心1-周">2.3 Unity 2D 核心（1 周）</a></li>
+        <li><a href="#24-必须掌握的-unity-api">2.4 必须掌握的 Unity API</a></li>
+        <li><a href="#25-抖音小游戏特殊要求">2.5 抖音小游戏特殊要求</a></li>
+      </ul>
+    </li>
+    <li><a href="#三开发流程">三、开发流程</a>
+      <ul>
+        <li><a href="#31-推荐的第一款游戏flappy-bird-类">3.1 推荐的第一款游戏：Flappy Bird 类</a></li>
+        <li><a href="#32-完整开发步骤">3.2 完整开发步骤</a></li>
+        <li><a href="#33-典型脚本示例">3.3 典型脚本示例</a></li>
+      </ul>
+    </li>
+    <li><a href="#四抖音小游戏适配">四、抖音小游戏适配</a>
+      <ul>
+        <li><a href="#41-抖音小游戏开发流程">4.1 抖音小游戏开发流程</a></li>
+        <li><a href="#42-抖音小游戏-sdk">4.2 抖音小游戏 SDK</a></li>
+        <li><a href="#43-构建优化">4.3 构建优化</a></li>
+        <li><a href="#44-抖音开发者账号">4.4 抖音开发者账号</a></li>
+      </ul>
+    </li>
+    <li><a href="#五技术储备路线图">五、技术储备路线图</a>
+      <ul>
+        <li><a href="#51-时间规划">5.1 时间规划</a></li>
+        <li><a href="#52-技能树">5.2 技能树</a></li>
+      </ul>
+    </li>
+    <li><a href="#六免费素材资源">六、免费素材资源</a></li>
+    <li><a href="#七避坑指南">七、避坑指南</a>
+      <ul>
+        <li><a href="#71-常见新手坑">7.1 常见新手坑</a></li>
+        <li><a href="#72-抖音小游戏特殊坑">7.2 抖音小游戏特殊坑</a></li>
+      </ul>
+    </li>
+    <li><a href="#八推荐学习资源">八、推荐学习资源</a>
+      <ul>
+        <li><a href="#81-视频">8.1 视频</a></li>
+        <li><a href="#82-文档">8.2 文档</a></li>
+        <li><a href="#83-推荐做游戏顺序">8.3 推荐做游戏顺序</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+    </div>
+</details>
+
+  <div class="post-content md-content"><h2 id="一环境搭建">一、环境搭建<a hidden class="anchor" aria-hidden="true" href="#一环境搭建">#</a></h2>
+<h3 id="11-安装-unity-editor">1.1 安装 Unity Editor<a hidden class="anchor" aria-hidden="true" href="#11-安装-unity-editor">#</a></h3>
+<ol>
+<li>启动 Unity Hub</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>unity-hub
+</span></span></code></pre></div><ol start="2">
+<li>安装 Editor：推荐 <strong>Unity 2022.3 LTS</strong>（长期支持，抖音 SDK 兼容性最好）</li>
+</ol>
+<p>安装时勾选模块：</p>
+<ul>
+<li>✅ Linux Build Support (IL2CPP)</li>
+<li>✅ WebGL Build Support（抖音小游戏核心）</li>
+<li>✅ Visual Studio / VS Code（代码编辑器）</li>
+<li>✅ 中文语言包</li>
+</ul>
+<ol start="3">
+<li>激活许可证：Unity Hub → 设置 → 许可证 → 个人版（免费，年收入 &lt; 10 万美元）</li>
+</ol>
+<h3 id="12-vs-code-配置">1.2 VS Code 配置<a hidden class="anchor" aria-hidden="true" href="#12-vs-code-配置">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#6272a4"># 安装 C# 开发工具</span>
+</span></span><span style="display:flex;"><span>code --install-extension ms-dotnettools.csharp
+</span></span><span style="display:flex;"><span>code --install-extension unity.unity-debug
+</span></span></code></pre></div><p>Unity → Edit → Preferences → External Editor → 选择 VS Code</p>
+<h3 id="13-项目创建">1.3 项目创建<a hidden class="anchor" aria-hidden="true" href="#13-项目创建">#</a></h3>
+<p>Unity Hub → 新建项目 → 选择 <strong>2D(Core)</strong> 模板 → 命名 → 创建</p>
+<blockquote>
+<p>不要选 2D URP，那个是给高端 2D 的，小游戏用 Core 就够了。</p>
+</blockquote>
+<hr>
+<h2 id="二必须储备的技术">二、必须储备的技术<a hidden class="anchor" aria-hidden="true" href="#二必须储备的技术">#</a></h2>
+<h3 id="21-c-基础1-2-周">2.1 C# 基础（1-2 周）<a hidden class="anchor" aria-hidden="true" href="#21-c-基础1-2-周">#</a></h3>
+<p>这是 Unity 的脚本语言，必须掌握：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-gdscript3" data-lang="gdscript3"><span style="display:flex;"><span>优先级    内容                    用途
+</span></span><span style="display:flex;"><span>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+</span></span><span style="display:flex;"><span>P0      变量、类型、运算符        基础中的基础
+</span></span><span style="display:flex;"><span>P0      <span style="color:#ff79c6">if</span><span style="color:#ff79c6">/</span><span style="color:#ff79c6">else</span>、<span style="color:#ff79c6">for</span><span style="color:#ff79c6">/</span><span style="color:#ff79c6">while</span>       控制流
+</span></span><span style="display:flex;"><span>P0      函数、参数、返回值        代码组织
+</span></span><span style="display:flex;"><span>P0      类、对象、继承           面向对象
+</span></span><span style="display:flex;"><span>P1      枚举 <span style="color:#ff79c6">enum</span>               状态机
+</span></span><span style="display:flex;"><span>P1      协程 IEnumerator         动画、延迟、计时器
+</span></span><span style="display:flex;"><span>P1      委托 delegate <span style="color:#ff79c6">/</span> Action   事件系统
+</span></span><span style="display:flex;"><span>P1      泛型 List<span style="color:#ff79c6">&lt;</span>T<span style="color:#ff79c6">&gt;</span>            数据管理
+</span></span><span style="display:flex;"><span>P2      接口 interface           解耦
+</span></span><span style="display:flex;"><span>P2      序列化 [Serializable]   存档
+</span></span></code></pre></div><p><strong>推荐学习路径</strong>：</p>
+<ol>
+<li>B站搜&quot;C# 入门&quot;（3-5小时速通）</li>
+<li>边做游戏边学，不要纯看视频</li>
+</ol>
+<h3 id="22-unity-核心概念1-周">2.2 Unity 核心概念（1 周）<a hidden class="anchor" aria-hidden="true" href="#22-unity-核心概念1-周">#</a></h3>
+<table>
+  <thead>
+      <tr>
+          <th>概念</th>
+          <th>说明</th>
+          <th>类比</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>GameObject</td>
+          <td>游戏中的物体</td>
+          <td>舞台上的演员</td>
+      </tr>
+      <tr>
+          <td>Component</td>
+          <td>挂在物体上的功能</td>
+          <td>演员的技能</td>
+      </tr>
+      <tr>
+          <td>Transform</td>
+          <td>位置/旋转/缩放</td>
+          <td>演员站在哪</td>
+      </tr>
+      <tr>
+          <td>MonoBehaviour</td>
+          <td>脚本基类</td>
+          <td>演员的剧本</td>
+      </tr>
+      <tr>
+          <td>Prefab</td>
+          <td>预制体，可复用</td>
+          <td>演员的模板</td>
+      </tr>
+      <tr>
+          <td>Scene</td>
+          <td>场景</td>
+          <td>舞台布景</td>
+      </tr>
+      <tr>
+          <td>Asset</td>
+          <td>资源（图片/音频/脚本）</td>
+          <td>道具库</td>
+      </tr>
+      <tr>
+          <td>Tag / Layer</td>
+          <td>标签/层级</td>
+          <td>演员分类</td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="23-unity-2d-核心1-周">2.3 Unity 2D 核心（1 周）<a hidden class="anchor" aria-hidden="true" href="#23-unity-2d-核心1-周">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>Sprite          → 2D 图片素材
+</span></span><span style="display:flex;"><span>SpriteRenderer  → 显示图片
+</span></span><span style="display:flex;"><span>Rigidbody2D     → 2D 物理引擎（重力/碰撞）
+</span></span><span style="display:flex;"><span>Collider2D      → 2D 碰撞体
+</span></span><span style="display:flex;"><span>Animator        → 动画状态机
+</span></span><span style="display:flex;"><span>Animation       → 关键帧动画
+</span></span><span style="display:flex;"><span>Canvas          → UI 系统
+</span></span><span style="display:flex;"><span>Tilemap         → 2D 地图编辑
+</span></span></code></pre></div><h3 id="24-必须掌握的-unity-api">2.4 必须掌握的 Unity API<a hidden class="anchor" aria-hidden="true" href="#24-必须掌握的-unity-api">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-csharp" data-lang="csharp"><span style="display:flex;"><span><span style="color:#6272a4">// 每帧执行</span>
+</span></span><span style="display:flex;"><span><span style="color:#ff79c6">void</span> Update() { }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#6272a4">// 物理帧（固定间隔，处理物理）</span>
+</span></span><span style="display:flex;"><span><span style="color:#ff79c6">void</span> FixedUpdate() { }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#6272a4">// 碰撞检测</span>
+</span></span><span style="display:flex;"><span><span style="color:#ff79c6">void</span> OnCollisionEnter2D(Collision2D col) { }
+</span></span><span style="display:flex;"><span><span style="color:#ff79c6">void</span> OnTriggerEnter2D(Collider2D col) { }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#6272a4">// 输入</span>
+</span></span><span style="display:flex;"><span>Input.GetKeyDown(KeyCode.Space)
+</span></span><span style="display:flex;"><span>Input.GetAxisRaw(<span style="color:#f1fa8c">&#34;Horizontal&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#6272a4">// 移动</span>
+</span></span><span style="display:flex;"><span>transform.Translate(Vector3.right * speed * Time.deltaTime)
+</span></span><span style="display:flex;"><span>rigidbody2D.velocity = <span style="color:#ff79c6">new</span> Vector2(moveX * speed, rb.velocity.y)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#6272a4">// 实例化/销毁</span>
+</span></span><span style="display:flex;"><span>Instantiate(prefab, position, rotation)
+</span></span><span style="display:flex;"><span>Destroy(gameObject, delay)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#6272a4">// 查找</span>
+</span></span><span style="display:flex;"><span>GameObject.Find(<span style="color:#f1fa8c">&#34;Name&#34;</span>)
+</span></span><span style="display:flex;"><span>GetComponent&lt;T&gt;()
+</span></span><span style="display:flex;"><span>FindObjectOfType&lt;T&gt;()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#6272a4">// 协程（延迟/计时）</span>
+</span></span><span style="display:flex;"><span>StartCoroutine(MyCoroutine());
+</span></span><span style="display:flex;"><span>IEnumerator MyCoroutine() {
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">yield</span> <span style="color:#ff79c6">return</span> <span style="color:#ff79c6">new</span> WaitForSeconds(<span style="color:#bd93f9">2f</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#6272a4">// 2秒后执行</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#6272a4">// 场景切换</span>
+</span></span><span style="display:flex;"><span>SceneManager.LoadScene(<span style="color:#f1fa8c">&#34;SceneName&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#6272a4">// 存档</span>
+</span></span><span style="display:flex;"><span>PlayerPrefs.SetInt(<span style="color:#f1fa8c">&#34;Score&#34;</span>, <span style="color:#bd93f9">100</span>);
+</span></span><span style="display:flex;"><span>PlayerPrefs.GetInt(<span style="color:#f1fa8c">&#34;Score&#34;</span>, <span style="color:#bd93f9">0</span>);
+</span></span></code></pre></div><h3 id="25-抖音小游戏特殊要求">2.5 抖音小游戏特殊要求<a hidden class="anchor" aria-hidden="true" href="#25-抖音小游戏特殊要求">#</a></h3>
+<table>
+  <thead>
+      <tr>
+          <th>技术</th>
+          <th>说明</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>WebGL 构建</td>
+          <td>抖音小游戏基于 WebGL</td>
+      </tr>
+      <tr>
+          <td>触屏操作</td>
+          <td>不依赖键盘，全触屏</td>
+      </tr>
+      <tr>
+          <td>包体控制</td>
+          <td>首包 &lt; 20MB，总包 &lt; 200MB</td>
+      </tr>
+      <tr>
+          <td>适配比例</td>
+          <td>竖屏 9:16 或横屏 16:9</td>
+      </tr>
+      <tr>
+          <td>抖音 SDK</td>
+          <td>登录、分享、广告、录屏</td>
+      </tr>
+      <tr>
+          <td>内存控制</td>
+          <td>手机端 &lt; 1GB 内存占用</td>
+      </tr>
+  </tbody>
+</table>
+<hr>
+<h2 id="三开发流程">三、开发流程<a hidden class="anchor" aria-hidden="true" href="#三开发流程">#</a></h2>
+<h3 id="31-推荐的第一款游戏flappy-bird-类">3.1 推荐的第一款游戏：Flappy Bird 类<a hidden class="anchor" aria-hidden="true" href="#31-推荐的第一款游戏flappy-bird-类">#</a></h3>
+<p>为什么选这个：</p>
+<ul>
+<li>代码量最小（200 行 C#）</li>
+<li>只需要 3 个素材（鸟、管道、背景）</li>
+<li>涵盖核心机制：物理、碰撞、计分、UI</li>
+<li>1-3 天可以完成</li>
+</ul>
+<h3 id="32-完整开发步骤">3.2 完整开发步骤<a hidden class="anchor" aria-hidden="true" href="#32-完整开发步骤">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>Step 1: 素材准备
+</span></span><span style="display:flex;"><span>  ├── 背景图（960×540 或 1080×1920）
+</span></span><span style="display:flex;"><span>  ├── 角色 Sprite（带动画帧）
+</span></span><span style="display:flex;"><span>  ├── 障碍物/道具
+</span></span><span style="display:flex;"><span>  └── 音效 BGM（免版权：freesound.org）
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Step 2: 场景搭建
+</span></span><span style="display:flex;"><span>  ├── 创建 GameObject
+</span></span><span style="display:flex;"><span>  ├── 添加 SpriteRenderer
+</span></span><span style="display:flex;"><span>  ├── 添加 Rigidbody2D / Collider2D
+</span></span><span style="display:flex;"><span>  └── 设置 Tag / Layer
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Step 3: 脚本编写
+</span></span><span style="display:flex;"><span>  ├── PlayerController.cs    玩家控制
+</span></span><span style="display:flex;"><span>  ├── ObstacleSpawner.cs     障碍生成
+</span></span><span style="display:flex;"><span>  ├── GameManager.cs         游戏状态/计分
+</span></span><span style="display:flex;"><span>  └── UIManager.cs           UI 交互
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Step 4: UI 制作
+</span></span><span style="display:flex;"><span>  ├── Canvas → Screen Space - Overlay
+</span></span><span style="display:flex;"><span>  ├── 开始界面（标题 + 开始按钮）
+</span></span><span style="display:flex;"><span>  ├── 游戏中 HUD（分数）
+</span></span><span style="display:flex;"><span>  └── 结束界面（分数 + 重新开始）
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Step 5: 打磨
+</span></span><span style="display:flex;"><span>  ├── 粒子效果（得分/死亡）
+</span></span><span style="display:flex;"><span>  ├── 音效
+</span></span><span style="display:flex;"><span>  ├── 动画（角色飞/旋转）
+</span></span><span style="display:flex;"><span>  └── 难度递增
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Step 6: WebGL 构建
+</span></span><span style="display:flex;"><span>  └── File → Build Settings → WebGL → Build
+</span></span></code></pre></div><h3 id="33-典型脚本示例">3.3 典型脚本示例<a hidden class="anchor" aria-hidden="true" href="#33-典型脚本示例">#</a></h3>
+<p><strong>PlayerController.cs</strong>：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-csharp" data-lang="csharp"><span style="display:flex;"><span><span style="color:#ff79c6">using</span> UnityEngine;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8be9fd;font-style:italic">public</span> <span style="color:#ff79c6">class</span> <span style="color:#50fa7b">PlayerController</span> : MonoBehaviour
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd;font-style:italic">public</span> <span style="color:#8be9fd">float</span> jumpForce = <span style="color:#bd93f9">5f</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd;font-style:italic">private</span> Rigidbody2D rb;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">void</span> Start()
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        rb = GetComponent&lt;Rigidbody2D&gt;();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">void</span> Update()
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#ff79c6">if</span> (Input.GetMouseButtonDown(<span style="color:#bd93f9">0</span>))
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            rb.velocity = Vector2.zero;
+</span></span><span style="display:flex;"><span>            rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">void</span> OnCollisionEnter2D(Collision2D col)
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        GameManager.Instance.GameOver();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p><strong>GameManager.cs</strong>：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-csharp" data-lang="csharp"><span style="display:flex;"><span><span style="color:#ff79c6">using</span> UnityEngine;
+</span></span><span style="display:flex;"><span><span style="color:#ff79c6">using</span> UnityEngine.SceneManagement;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8be9fd;font-style:italic">public</span> <span style="color:#ff79c6">class</span> <span style="color:#50fa7b">GameManager</span> : MonoBehaviour
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd;font-style:italic">public</span> <span style="color:#8be9fd;font-style:italic">static</span> GameManager Instance;
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd;font-style:italic">public</span> <span style="color:#8be9fd">int</span> score;
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd;font-style:italic">public</span> <span style="color:#8be9fd">bool</span> isGameOver;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ff79c6">void</span> Awake()
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        Instance = <span style="color:#ff79c6">this</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd;font-style:italic">public</span> <span style="color:#ff79c6">void</span> AddScore()
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#ff79c6">if</span> (isGameOver) <span style="color:#ff79c6">return</span>;
+</span></span><span style="display:flex;"><span>        score++;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd;font-style:italic">public</span> <span style="color:#ff79c6">void</span> GameOver()
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        isGameOver = <span style="color:#ff79c6">true</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#8be9fd;font-style:italic">public</span> <span style="color:#ff79c6">void</span> Restart()
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><hr>
+<h2 id="四抖音小游戏适配">四、抖音小游戏适配<a hidden class="anchor" aria-hidden="true" href="#四抖音小游戏适配">#</a></h2>
+<h3 id="41-抖音小游戏开发流程">4.1 抖音小游戏开发流程<a hidden class="anchor" aria-hidden="true" href="#41-抖音小游戏开发流程">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>Unity WebGL 构建
+</span></span><span style="display:flex;"><span>  → 转换为抖音小游戏格式（使用 douyin-convert 工具）
+</span></span><span style="display:flex;"><span>  → 抖音开发者工具调试
+</span></span><span style="display:flex;"><span>  → 提交审核
+</span></span><span style="display:flex;"><span>  → 上架
+</span></span></code></pre></div><h3 id="42-抖音小游戏-sdk">4.2 抖音小游戏 SDK<a hidden class="anchor" aria-hidden="true" href="#42-抖音小游戏-sdk">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#6272a4"># 抖音官方 Unity SDK</span>
+</span></span><span style="display:flex;"><span>https://github.com/nicewarm/DouyinMiniGameUnity
+</span></span></code></pre></div><p>核心能力：</p>
+<table>
+  <thead>
+      <tr>
+          <th>能力</th>
+          <th>API</th>
+          <th>用途</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>登录</td>
+          <td>tt.login()</td>
+          <td>获取用户身份</td>
+      </tr>
+      <tr>
+          <td>分享</td>
+          <td>tt.shareAppMessage()</td>
+          <td>社交传播</td>
+      </tr>
+      <tr>
+          <td>广告</td>
+          <td>tt.createRewardedVideoAd()</td>
+          <td>变现</td>
+      </tr>
+      <tr>
+          <td>录屏</td>
+          <td>tt.getGameRecorderManager()</td>
+          <td>短视频传播</td>
+      </tr>
+      <tr>
+          <td>排行榜</td>
+          <td>tt.setUserCloudStorage()</td>
+          <td>竞技社交</td>
+      </tr>
+      <tr>
+          <td>支付</td>
+          <td>tt.pay()</td>
+          <td>内购</td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="43-构建优化">4.3 构建优化<a hidden class="anchor" aria-hidden="true" href="#43-构建优化">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span><span style="color:#6272a4">// 抖音小游戏对 WebGL 构建的特殊要求
+</span></span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#6272a4">// 1. 压缩格式：Brotli
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4">// Unity → Project Settings → Player → WebGL → Compression Format → Brotli
+</span></span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#6272a4">// 2. 代码剥离：High
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4">// Unity → Project Settings → Player → Managed Stripping Level → High
+</span></span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#6272a4">// 3. IL2CPP（必须）
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4">// Unity → Project Settings → Player → Scripting Backend → IL2CPP
+</span></span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#6272a4">// 4. 包体优化
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4">// - 使用 Sprite Atlas 打包图集
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4">// - 压缩纹理（ASTC/ETC2）
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4">// - 移除未使用的模块
+</span></span></span><span style="display:flex;"><span><span style="color:#6272a4">// - Addressables 按需加载
+</span></span></span></code></pre></div><h3 id="44-抖音开发者账号">4.4 抖音开发者账号<a hidden class="anchor" aria-hidden="true" href="#44-抖音开发者账号">#</a></h3>
+<ol>
+<li>注册：https://developer.open-douyin.com/</li>
+<li>创建小游戏应用</li>
+<li>获取 AppID</li>
+<li>下载抖音开发者工具（仅 Windows/Mac，Linux 需用 Windows 虚拟机或借电脑）</li>
+</ol>
+<blockquote>
+<p><strong>注意：抖音开发者工具目前只有 Windows 和 Mac 版本，Linux 不支持。</strong> 构建好的 WebGL 包需要在 Windows/Mac 上用开发者工具转换和调试。</p>
+</blockquote>
+<hr>
+<h2 id="五技术储备路线图">五、技术储备路线图<a hidden class="anchor" aria-hidden="true" href="#五技术储备路线图">#</a></h2>
+<h3 id="51-时间规划">5.1 时间规划<a hidden class="anchor" aria-hidden="true" href="#51-时间规划">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>第 1 周：C# 基础 + Unity 界面熟悉
+</span></span><span style="display:flex;"><span>  ├── C# 语法速通（变量/循环/类/继承）
+</span></span><span style="display:flex;"><span>  ├── Unity 界面操作（Hierarchy/Inspector/Scene/Game）
+</span></span><span style="display:flex;"><span>  └── 跟着做一个简单 Demo
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>第 2 周：2D 游戏核心
+</span></span><span style="display:flex;"><span>  ├── 物理系统（Rigidbody2D / Collider2D）
+</span></span><span style="display:flex;"><span>  ├── 动画系统（Animator / Animation）
+</span></span><span style="display:flex;"><span>  ├── UI 系统（Canvas / Button / Text）
+</span></span><span style="display:flex;"><span>  └── 完成 Flappy Bird 克隆
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>第 3 周：完整游戏
+</span></span><span style="display:flex;"><span>  ├── 素材制作（Aseprite / Piskel）
+</span></span><span style="display:flex;"><span>  ├── 音效集成
+</span></span><span style="display:flex;"><span>  ├── 关卡设计
+</span></span><span style="display:flex;"><span>  ├── 存档系统
+</span></span><span style="display:flex;"><span>  └── 打磨发布
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>第 4 周：抖音适配
+</span></span><span style="display:flex;"><span>  ├── WebGL 构建
+</span></span><span style="display:flex;"><span>  ├── 抖音 SDK 集成
+</span></span><span style="display:flex;"><span>  ├── 开发者工具调试
+</span></span><span style="display:flex;"><span>  └── 提交审核
+</span></span></code></pre></div><h3 id="52-技能树">5.2 技能树<a hidden class="anchor" aria-hidden="true" href="#52-技能树">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>Unity 2D 小游戏开发
+</span></span><span style="display:flex;"><span>├── 编程
+</span></span><span style="display:flex;"><span>│   ├── C# 基础 ★★★★★
+</span></span><span style="display:flex;"><span>│   ├── 面向对象 ★★★★
+</span></span><span style="display:flex;"><span>│   ├── 设计模式（单例/状态机/观察者）★★★
+</span></span><span style="display:flex;"><span>│   └── 协程/异步 ★★★
+</span></span><span style="display:flex;"><span>├── Unity 引擎
+</span></span><span style="display:flex;"><span>│   ├── 2D 物理系统 ★★★★★
+</span></span><span style="display:flex;"><span>│   ├── 动画系统 ★★★★
+</span></span><span style="display:flex;"><span>│   ├── UI 系统 ★★★★★
+</span></span><span style="display:flex;"><span>│   ├── 音频系统 ★★★
+</span></span><span style="display:flex;"><span>│   ├── 粒子系统 ★★★
+</span></span><span style="display:flex;"><span>│   └── 场景管理 ★★★
+</span></span><span style="display:flex;"><span>├── 美术
+</span></span><span style="display:flex;"><span>│   ├── 像素画基础 ★★★
+</span></span><span style="display:flex;"><span>│   ├── Sprite 动画帧 ★★★
+</span></span><span style="display:flex;"><span>│   ├── Tilemap 地图 ★★★
+</span></span><span style="display:flex;"><span>│   └── UI 设计 ★★★
+</span></span><span style="display:flex;"><span>└── 发布
+</span></span><span style="display:flex;"><span>    ├── WebGL 构建 ★★★★★
+</span></span><span style="display:flex;"><span>    ├── 抖音 SDK ★★★★
+</span></span><span style="display:flex;"><span>    ├── 包体优化 ★★★★
+</span></span><span style="display:flex;"><span>    └── 性能优化 ★★★
+</span></span></code></pre></div><hr>
+<h2 id="六免费素材资源">六、免费素材资源<a hidden class="anchor" aria-hidden="true" href="#六免费素材资源">#</a></h2>
+<table>
+  <thead>
+      <tr>
+          <th>资源</th>
+          <th>网址</th>
+          <th>说明</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>Kenney</td>
+          <td>kenney.nl/assets</td>
+          <td>最全的免费 2D 素材</td>
+      </tr>
+      <tr>
+          <td>OpenGameArt</td>
+          <td>opengameart.org</td>
+          <td>开源游戏素材</td>
+      </tr>
+      <tr>
+          <td>Itch.io</td>
+          <td>itch.io/game-assets/free</td>
+          <td>独立游戏素材</td>
+      </tr>
+      <tr>
+          <td>Freesound</td>
+          <td>freesound.org</td>
+          <td>免费音效</td>
+      </tr>
+      <tr>
+          <td>Piskel</td>
+          <td>piskelapp.com</td>
+          <td>在线像素画编辑器</td>
+      </tr>
+      <tr>
+          <td>Aseprite</td>
+          <td>aseprite.org</td>
+          <td>像素画神器（付费）</td>
+      </tr>
+      <tr>
+          <td>Unity Asset Store</td>
+          <td>assetstore.unity.com</td>
+          <td>免费专区</td>
+      </tr>
+  </tbody>
+</table>
+<hr>
+<h2 id="七避坑指南">七、避坑指南<a hidden class="anchor" aria-hidden="true" href="#七避坑指南">#</a></h2>
+<h3 id="71-常见新手坑">7.1 常见新手坑<a hidden class="anchor" aria-hidden="true" href="#71-常见新手坑">#</a></h3>
+<table>
+  <thead>
+      <tr>
+          <th>坑</th>
+          <th>解法</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>碰撞不生效</td>
+          <td>检查两个物体都有 Collider2D，至少一个有 Rigidbody2D</td>
+      </tr>
+      <tr>
+          <td>触发器 vs 碰撞体</td>
+          <td>Trigger 穿透用 OnTriggerEnter2D，碰撞用 OnCollisionEnter2D</td>
+      </tr>
+      <tr>
+          <td>移动卡顿</td>
+          <td>物理移动放 FixedUpdate，用 velocity 而不是 AddForce</td>
+      </tr>
+      <tr>
+          <td>UI 点击穿透</td>
+          <td>EventSystem 组件不能删</td>
+      </tr>
+      <tr>
+          <td>手机触屏无效</td>
+          <td>用 Input.GetMouseButtonDown(0)，触屏和鼠标通用</td>
+      </tr>
+      <tr>
+          <td>包体太大</td>
+          <td>Sprite Atlas + 代码剥离 + 压缩纹理</td>
+      </tr>
+      <tr>
+          <td>WebGL 黑屏</td>
+          <td>检查浏览器控制台报错，通常是内存不足</td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="72-抖音小游戏特殊坑">7.2 抖音小游戏特殊坑<a hidden class="anchor" aria-hidden="true" href="#72-抖音小游戏特殊坑">#</a></h3>
+<table>
+  <thead>
+      <tr>
+          <th>坑</th>
+          <th>解法</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>开发者工具无 Linux 版</td>
+          <td>借 Windows 电脑或用虚拟机</td>
+      </tr>
+      <tr>
+          <td>WebGL 构建失败</td>
+          <td>切换 IL2CPP + 清 Library 重新构建</td>
+      </tr>
+      <tr>
+          <td>首包超 20MB</td>
+          <td>Addressables 分包加载</td>
+      </tr>
+      <tr>
+          <td>分享功能不生效</td>
+          <td>需要在抖音后台配置分享素材</td>
+      </tr>
+      <tr>
+          <td>审核被拒</td>
+          <td>先看抖音小游戏审核规范，注意无版号不能内购</td>
+      </tr>
+  </tbody>
+</table>
+<hr>
+<h2 id="八推荐学习资源">八、推荐学习资源<a hidden class="anchor" aria-hidden="true" href="#八推荐学习资源">#</a></h2>
+<h3 id="81-视频">8.1 视频<a hidden class="anchor" aria-hidden="true" href="#81-视频">#</a></h3>
+<table>
+  <thead>
+      <tr>
+          <th>资源</th>
+          <th>说明</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>B站 M_Studio</td>
+          <td>最适合新手的 Unity 2D 教程</td>
+      </tr>
+      <tr>
+          <td>B站 麦扣 M_Studio</td>
+          <td>2D RPG 系列教程</td>
+      </tr>
+      <tr>
+          <td>Unity Learn 官方</td>
+          <td>免费系统课程</td>
+      </tr>
+      <tr>
+          <td>YouTube Brackeys</td>
+          <td>经典英文教程（虽已停更但仍经典）</td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="82-文档">8.2 文档<a hidden class="anchor" aria-hidden="true" href="#82-文档">#</a></h3>
+<table>
+  <thead>
+      <tr>
+          <th>资源</th>
+          <th>网址</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>Unity 官方文档</td>
+          <td>docs.unity3d.com</td>
+      </tr>
+      <tr>
+          <td>抖音小游戏文档</td>
+          <td>developer.open-douyin.com/docs</td>
+      </tr>
+      <tr>
+          <td>C# 官方教程</td>
+          <td>learn.microsoft.com/zh-cn/dotnet/csharp</td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="83-推荐做游戏顺序">8.3 推荐做游戏顺序<a hidden class="anchor" aria-hidden="true" href="#83-推荐做游戏顺序">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>1. Flappy Bird（1-3天）     → 学物理、碰撞、UI
+</span></span><span style="display:flex;"><span>2. 2048（2-3天）            → 学逻辑、动画、UI
+</span></span><span style="display:flex;"><span>3. 消消乐（1-2周）          → 学算法、特效、关卡
+</span></span><span style="display:flex;"><span>4. 跑酷游戏（1-2周）        → 学对象池、地图生成、难度曲线
+</span></span><span style="display:flex;"><span>5. 自己的创意（2-4周）      → 综合实战
+</span></span></code></pre></div><blockquote>
+<p><strong>最重要的是：尽快发布第一个游戏，哪怕很丑很简陋。发布比完美更重要。</strong></p>
+</blockquote>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="http://localhost:1313/tags/unity/">Unity</a></li>
+      <li><a href="http://localhost:1313/tags/2d%E6%B8%B8%E6%88%8F/">2D游戏</a></li>
+      <li><a href="http://localhost:1313/tags/%E6%8A%96%E9%9F%B3%E5%B0%8F%E6%B8%B8%E6%88%8F/">抖音小游戏</a></li>
+      <li><a href="http://localhost:1313/tags/c%23/">C#</a></li>
+      <li><a href="http://localhost:1313/tags/%E6%B8%B8%E6%88%8F%E5%BC%80%E5%8F%91/">游戏开发</a></li>
+    </ul>
+<nav class="paginav">
+  <a class="next" href="http://localhost:1313/posts/red-alert-card-game-design-wiki/">
+    <span class="title">Next »</span>
+    <span>红色警戒卡牌对战手游：设计 Wiki</span>
+  </a>
+</nav>
+
+
+<ul class="share-buttons">
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share Unity 2D 小游戏开发指南：从零到抖音发布 on x"
+            href="https://x.com/intent/tweet/?text=Unity%202D%20%e5%b0%8f%e6%b8%b8%e6%88%8f%e5%bc%80%e5%8f%91%e6%8c%87%e5%8d%97%ef%bc%9a%e4%bb%8e%e9%9b%b6%e5%88%b0%e6%8a%96%e9%9f%b3%e5%8f%91%e5%b8%83&amp;url=http%3a%2f%2flocalhost%3a1313%2fposts%2funity-2d-game-dev-guide-for-douyin%2f&amp;hashtags=Unity%2c2D%e6%b8%b8%e6%88%8f%2c%e6%8a%96%e9%9f%b3%e5%b0%8f%e6%b8%b8%e6%88%8f%2cC%23%2c%e6%b8%b8%e6%88%8f%e5%bc%80%e5%8f%91">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M512 62.554 L 512 449.446 C 512 483.97 483.97 512 449.446 512 L 62.554 512 C 28.03 512 0 483.97 0 449.446 L 0 62.554 C 0 28.03 28.029 0 62.554 0 L 449.446 0 C 483.971 0 512 28.03 512 62.554 Z M 269.951 190.75 L 182.567 75.216 L 56 75.216 L 207.216 272.95 L 63.9 436.783 L 125.266 436.783 L 235.9 310.383 L 332.567 436.783 L 456 436.783 L 298.367 228.367 L 432.367 75.216 L 371.033 75.216 Z M 127.633 110 L 164.101 110 L 383.481 400.065 L 349.5 400.065 Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share Unity 2D 小游戏开发指南：从零到抖音发布 on linkedin"
+            href="https://www.linkedin.com/shareArticle?mini=true&amp;url=http%3a%2f%2flocalhost%3a1313%2fposts%2funity-2d-game-dev-guide-for-douyin%2f&amp;title=Unity%202D%20%e5%b0%8f%e6%b8%b8%e6%88%8f%e5%bc%80%e5%8f%91%e6%8c%87%e5%8d%97%ef%bc%9a%e4%bb%8e%e9%9b%b6%e5%88%b0%e6%8a%96%e9%9f%b3%e5%8f%91%e5%b8%83&amp;summary=Unity%202D%20%e5%b0%8f%e6%b8%b8%e6%88%8f%e5%bc%80%e5%8f%91%e6%8c%87%e5%8d%97%ef%bc%9a%e4%bb%8e%e9%9b%b6%e5%88%b0%e6%8a%96%e9%9f%b3%e5%8f%91%e5%b8%83&amp;source=http%3a%2f%2flocalhost%3a1313%2fposts%2funity-2d-game-dev-guide-for-douyin%2f">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share Unity 2D 小游戏开发指南：从零到抖音发布 on reddit"
+            href="https://reddit.com/submit?url=http%3a%2f%2flocalhost%3a1313%2fposts%2funity-2d-game-dev-guide-for-douyin%2f&title=Unity%202D%20%e5%b0%8f%e6%b8%b8%e6%88%8f%e5%bc%80%e5%8f%91%e6%8c%87%e5%8d%97%ef%bc%9a%e4%bb%8e%e9%9b%b6%e5%88%b0%e6%8a%96%e9%9f%b3%e5%8f%91%e5%b8%83">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share Unity 2D 小游戏开发指南：从零到抖音发布 on facebook"
+            href="https://facebook.com/sharer/sharer.php?u=http%3a%2f%2flocalhost%3a1313%2fposts%2funity-2d-game-dev-guide-for-douyin%2f">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share Unity 2D 小游戏开发指南：从零到抖音发布 on whatsapp"
+            href="https://api.whatsapp.com/send?text=Unity%202D%20%e5%b0%8f%e6%b8%b8%e6%88%8f%e5%bc%80%e5%8f%91%e6%8c%87%e5%8d%97%ef%bc%9a%e4%bb%8e%e9%9b%b6%e5%88%b0%e6%8a%96%e9%9f%b3%e5%8f%91%e5%b8%83%20-%20http%3a%2f%2flocalhost%3a1313%2fposts%2funity-2d-game-dev-guide-for-douyin%2f">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share Unity 2D 小游戏开发指南：从零到抖音发布 on telegram"
+            href="https://telegram.me/share/url?text=Unity%202D%20%e5%b0%8f%e6%b8%b8%e6%88%8f%e5%bc%80%e5%8f%91%e6%8c%87%e5%8d%97%ef%bc%9a%e4%bb%8e%e9%9b%b6%e5%88%b0%e6%8a%96%e9%9f%b3%e5%8f%91%e5%b8%83&amp;url=http%3a%2f%2flocalhost%3a1313%2fposts%2funity-2d-game-dev-guide-for-douyin%2f">
+            <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share Unity 2D 小游戏开发指南：从零到抖音发布 on ycombinator"
+            href="https://news.ycombinator.com/submitlink?t=Unity%202D%20%e5%b0%8f%e6%b8%b8%e6%88%8f%e5%bc%80%e5%8f%91%e6%8c%87%e5%8d%97%ef%bc%9a%e4%bb%8e%e9%9b%b6%e5%88%b0%e6%8a%96%e9%9f%b3%e5%8f%91%e5%b8%83&u=http%3a%2f%2flocalhost%3a1313%2fposts%2funity-2d-game-dev-guide-for-douyin%2f">
+            <svg version="1.1" xml:space="preserve" width="30px" height="30px" viewBox="0 0 512 512" fill="currentColor"
+                xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape">
+                <path
+                    d="M449.446 0C483.971 0 512 28.03 512 62.554L512 449.446C512 483.97 483.97 512 449.446 512L62.554 512C28.03 512 0 483.97 0 449.446L0 62.554C0 28.03 28.029 0 62.554 0L449.446 0ZM183.8767 87.9921H121.8427L230.6673 292.4508V424.0079H281.3328V292.4508L390.1575 87.9921H328.1233L256 238.2489z" />
+            </svg>
+        </a>
+    </li>
+</ul>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2026 <a href="http://localhost:1313/">SoulLand</a></span> · 
+
+    
+    
+    <span>
+        Powered by
+        <a href="https://gohugo.io/?utm_source=papermod" rel="noopener" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" id="top-link" class="top-link hidden" aria-label="go to top" title="Go to Top (Alt + G)" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevrons-up">
+        <polyline points="17 11 12 6 7 11"></polyline>
+        <polyline points="17 18 12 13 7 18"></polyline>
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu');
+    if (menu) {
+        
+        const scrollPosition = localStorage.getItem("menu-scroll-position");
+        if (scrollPosition) {
+            menu.scrollLeft = parseInt(scrollPosition, 10);
+        }
+        
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var toplink = document.getElementById("top-link");
+    window.onscroll = function () {
+        const scrollThreshold = window.innerHeight;
+        if (document.body.scrollTop > scrollThreshold || document.documentElement.scrollTop > scrollThreshold) {
+            toplink.classList.remove("hidden");
+        } else {
+            toplink.classList.add("hidden");
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        const html = document.querySelector("html");
+        if (html.dataset.theme === "dark") {
+            html.dataset.theme = 'light';
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            html.dataset.theme = 'dark';
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

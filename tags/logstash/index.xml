@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Logstash on SoulLand</title>
+    <link>http://localhost:1313/tags/logstash/</link>
+    <description>Recent content in Logstash on SoulLand</description>
+    <generator>Hugo</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Sat, 09 May 2026 00:00:00 +0000</lastBuildDate>
+    <atom:link href="http://localhost:1313/tags/logstash/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Logstash 使用手册：从入门到实践</title>
+      <link>http://localhost:1313/posts/logstash-usage-guide/</link>
+      <pubDate>Fri, 08 May 2026 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/posts/logstash-usage-guide/</guid>
+      <description>Logstash 核心概念、配置语法、常用插件及实战示例的完整指南</description>
+    </item>
+    <item>
+      <title>关于Logstash管理Pipeline是否重启进程的讨论</title>
+      <link>http://localhost:1313/posts/logstash-pipeline-reload-discussion/</link>
+      <pubDate>Fri, 08 May 2026 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/posts/logstash-pipeline-reload-discussion/</guid>
+      <description>Logstash单管道配置支持热重载，但管道增删必须重启。Shadow Pipeline如何在这种限制下发挥作用？官方的设计考量与替代方案。</description>
+    </item>
+    <item>
+      <title>Apollo 配置中心与 Logstash 管理：能力与局限</title>
+      <link>http://localhost:1313/posts/apollo-config-center-and-logstash/</link>
+      <pubDate>Fri, 08 May 2026 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/posts/apollo-config-center-and-logstash/</guid>
+      <description>Apollo 是携程开源的分布式配置管理中心，不是 Logstash 管理平台。本文分析 Apollo 管理 Logstash 配置的实践方案、优势与局限。</description>
+    </item>
+    <item>
+      <title>Logstash 调试平台设计：六大核心问题深度分析</title>
+      <link>http://localhost:1313/posts/logstash-debug-platform-design/</link>
+      <pubDate>Fri, 08 May 2026 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/posts/logstash-debug-platform-design/</guid>
+      <description>多用户共享节点调试 Logstash Pipeline 的完整方案：临时进程启动、用户隔离、数据投递验证、启动时延优化、资源保障与回收。</description>
+    </item>
+    <item>
+      <title>Logstash 内存深度分析：1000 管道场景下 128G 内存是否必要？</title>
+      <link>http://localhost:1313/posts/logstash-jvm-memory-and-1000-pipelines/</link>
+      <pubDate>Sat, 09 May 2026 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/posts/logstash-jvm-memory-and-1000-pipelines/</guid>
+      <description>从 JVM 内存模型出发，实测多管道场景下 Logstash 的内存消耗，分析 JDK 各版本的内存差异，计算 1000 管道场景的真实内存需求。</description>
+    </item>
+  </channel>
+</rss>

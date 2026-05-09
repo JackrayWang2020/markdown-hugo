@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto" data-theme="auto">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Logstash 内存深度分析：1000 管道场景下 128G 内存是否必要？ | SoulLand</title>
+<meta name="keywords" content="Logstash, JVM, 内存管理, JDK21, ZGC, 多管道">
+<meta name="description" content="从 JVM 内存模型出发，实测多管道场景下 Logstash 的内存消耗，分析 JDK 各版本的内存差异，计算 1000 管道场景的真实内存需求。">
+<meta name="author" content="Jackray">
+<link rel="canonical" href="http://localhost:1313/posts/logstash-jvm-memory-and-1000-pipelines/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.css" rel="preload stylesheet" as="style">
+<link rel="icon" href="http://localhost:1313/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:1313/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:1313/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://localhost:1313/apple-touch-icon.png">
+<link rel="mask-icon" href="http://localhost:1313/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="http://localhost:1313/posts/logstash-jvm-memory-and-1000-pipelines/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+                color-scheme: dark;
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .toc {
+                background: var(--entry);
+            }
+        }
+
+    </style>
+</noscript>
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.querySelector("html").dataset.theme = 'dark';
+    } else if (localStorage.getItem("pref-theme") === "light") {
+       document.querySelector("html").dataset.theme = 'light';
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.querySelector("html").dataset.theme = 'dark';
+    } else {
+        document.querySelector("html").dataset.theme = 'light';
+    }
+
+</script><meta property="og:url" content="http://localhost:1313/posts/logstash-jvm-memory-and-1000-pipelines/">
+  <meta property="og:site_name" content="SoulLand">
+  <meta property="og:title" content="Logstash 内存深度分析：1000 管道场景下 128G 内存是否必要？">
+  <meta property="og:description" content="从 JVM 内存模型出发，实测多管道场景下 Logstash 的内存消耗，分析 JDK 各版本的内存差异，计算 1000 管道场景的真实内存需求。">
+  <meta property="og:locale" content="zh_cn">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2026-05-09T00:00:00+00:00">
+    <meta property="article:modified_time" content="2026-05-09T00:00:00+00:00">
+    <meta property="article:tag" content="Logstash">
+    <meta property="article:tag" content="JVM">
+    <meta property="article:tag" content="内存管理">
+    <meta property="article:tag" content="JDK21">
+    <meta property="article:tag" content="ZGC">
+    <meta property="article:tag" content="多管道">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Logstash 内存深度分析：1000 管道场景下 128G 内存是否必要？">
+  <meta name="twitter:description" content="从 JVM 内存模型出发，实测多管道场景下 Logstash 的内存消耗，分析 JDK 各版本的内存差异，计算 1000 管道场景的真实内存需求。">
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "http://localhost:1313/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Logstash 内存深度分析：1000 管道场景下 128G 内存是否必要？",
+      "item": "http://localhost:1313/posts/logstash-jvm-memory-and-1000-pipelines/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Logstash 内存深度分析：1000 管道场景下 128G 内存是否必要？",
+  "name": "Logstash 内存深度分析：1000 管道场景下 128G 内存是否必要？",
+  "description": "从 JVM 内存模型出发，实测多管道场景下 Logstash 的内存消耗，分析 JDK 各版本的内存差异，计算 1000 管道场景的真实内存需求。",
+  "keywords": [
+    "Logstash", "JVM", "内存管理", "JDK21", "ZGC", "多管道"
+  ],
+  "articleBody": "一、问题背景 当一个 Logstash 节点承载 1000 个管道时，128G 内存是否够用？要回答这个问题，需要理解：\nLogstash 进程的内存由哪些部分组成？ 每增加一个管道，额外消耗多少内存？ JDK 版本对内存有什么影响？ 1000 管道的真实内存需求是多少？ 二、JVM 内存模型 Logstash 运行在 JVM 上，一个 Java 进程的内存远不止堆：\n┌─────────────────────────────────────────────┐ │ Java 进程内存 │ ├─────────────────────────────────────────────┤ │ │ │ ┌─────────────────────────────────┐ │ │ │ Java Heap（堆） │ │ │ │ -Xms / -Xmx 控制 │ │ │ │ 对象实例、队列、缓存 │ │ │ └─────────────────────────────────┘ │ │ │ │ ┌─────────────────────────────────┐ │ │ │ Metaspace（元空间） │ │ │ │ 类元数据、方法信息、常量池 │ │ │ │ 默认无上限（受限于宿主内存） │ │ │ └─────────────────────────────────┘ │ │ │ │ ┌─────────────────────────────────┐ │ │ │ Thread Stacks（线程栈） │ │ │ │ 每线程 ~1MB │ │ │ │ 1000 线程 = ~1GB │ │ │ └─────────────────────────────────┘ │ │ │ │ ┌─────────────────────────────────┐ │ │ │ Direct Memory（堆外内存） │ │ │ │ NIO ByteBuffer、网络缓冲区 │ │ │ │ 默认 = -Xmx │ │ │ └─────────────────────────────────┘ │ │ │ │ ┌─────────────────────────────────┐ │ │ │ Code Cache（代码缓存） │ │ │ │ JIT 编译后的本地代码 │ │ │ │ 默认 ~240MB │ │ │ └─────────────────────────────────┘ │ │ │ │ ┌─────────────────────────────────┐ │ │ │ GC 自身开销 │ │ │ │ 卡表、记忆集、标记位图 │ │ │ │ 与堆大小成正比 │ │ │ └─────────────────────────────────┘ │ │ │ └─────────────────────────────────────────────┘ 2.1 各区域与 Logstash 的关系 内存区域 Logstash 用途 大小 Heap Event 对象、管道队列、插件状态、JRuby 运行时 -Xmx 控制 Metaspace JRuby 类定义、Logstash 插件类、grok 正则模式 无上限，实测 100-200MB Thread Stacks 每个 pipeline worker 一个线程 每线程 ~1MB Direct Memory 网络插件的 NIO 缓冲区（Kafka/ES/Beats） 与连接数相关 Code Cache JIT 编译的热点代码 ~240MB GC 开销 G1 的记忆集（remembered sets） 堆的 5-20% 三、实测数据 3.1 测试环境 Logstash 9.3.2，捆绑 JDK 21.0.10 (Temurin) 测试机：4核 / 7.1G 内存 / SSD 管道配置：HTTP input（空闲，不接收数据）→ 空 filter → file output (/dev/null) 每个 pipeline: workers=1, batch.size=1, queue.type=memory 3.2 实测结果 配置 JVM 堆 RSS（物理内存） 堆使用 线程数 1 管道 256m 535MB 151MB 46 10 管道 256m 566MB 191MB 155 3.3 增量分析 指标 1→10 管道增量 每管道增量 RSS +31MB ~3.4MB/管道 堆使用 +40MB ~4.4MB/管道 线程 +109 ~12 线程/管道 3.4 内存拆解（1 管道基线） RSS = 535MB ├── JVM Heap (已用) 151MB ← Event 对象、JRuby 运行时 ├── JVM Heap (未用) 105MB ← -Xmx256m 已分配但未使用 ├── Metaspace ~120MB ← JRuby 类、插件类 ├── Thread Stacks 46MB ← 46 线程 × 1MB ├── Code Cache ~50MB ← JIT 编译代码 ├── Direct Memory ~30MB ← NIO 缓冲区 ├── GC 开销 ~33MB ← G1 记忆集 └── 其他 ~0MB 四、1000 管道内存需求计算 4.1 理论计算 基线成本（1 管道）: JVM + JRuby 启动开销 ~380MB 1 管道运行时 ~155MB (heap used + threads + metaspace) 小计 ~535MB 增量成本（999 个额外管道）: 每管道 RSS ~3.4MB 每管道线程 ~12个 × 1MB = 12MB 实际增量按 15MB/管道估算（含队列、codec、连接池） 999 × 15MB ~15GB 线程栈: 1000 × 12线程/管道 = 12000 线程 12000 × 1MB = ~12GB Metaspace: 1000 管道共享 JRuby 运行时，但每个管道的插件类不共享 估算 1000 × 2MB = ~2GB 管道内存队列: 默认 page 大小 250MB × 1 page × 1000 = 不现实 实际应设 queue.page_capacity: 50MB, queue.max_events: 1000 1000 × 50MB = ~50GB (峰值，不会同时满) 实际运行中每个队列 ~10MB: ~10GB Direct Memory: Kafka/ES 连接的 NIO 缓冲区 1000 × 2MB = ~2GB JVM Heap: 需要容纳所有队列 + Event 对象 + JRuby 估算 ~8-16GB 4.2 1000 管道内存估算汇总 内存区域 估算 说明 JVM Heap 8-16GB Event 对象 + 队列 + JRuby Thread Stacks ~12GB 12000 线程 × 1MB Metaspace ~2GB 1000 管道的插件类 Direct Memory ~2GB 网络 NIO 缓冲 Code Cache ~240MB JIT GC 开销 ~2GB G1 记忆集 管道基础开销 ~15GB 每管道 ~15MB 合计 ~40-50GB 4.3 关键发现：线程栈是最大隐藏开销 1000 管道 × 12 线程/管道 = 12000 线程，仅线程栈就占 12GB。这是很多人忽略的。\n可以通过减小线程栈来优化：\nLS_JAVA_OPTS=\"-Xms16g -Xmx16g -Xss512k\" # ^^^^^^^ # 默认 1MB → 改为 512KB # 节省 6GB 线程栈内存 但要注意：-Xss 过小可能导致 StackOverflowError，尤其是 grok 正则嵌套深时。512KB 是经验下限。\n4.4 128G 够不够？ 场景 内存需求 128G 是否够 1000 管道，默认配置 40-50GB ✅ 绰绰有余 1000 管道，含 Kafka/ES 连接池 50-60GB ✅ 够用 1000 管道，PQ 持久化队列 80-100GB ✅ 勉强够 1000 管道，大吞吐 + 大队列 100GB+ ⚠️ 需要评估 结论：128G 对 1000 管道是合理的配置，甚至可以说是必要的下限。\n原因：\n50GB 进程内存 + 50GB OS page cache + 28GB 余量 = 128GB OS page cache 对 file input / Kafka 消费至关重要 需要余量应对 GC 最差情况（全堆对象晋升 + 记忆集膨胀） PQ（持久化队列）场景下磁盘 IO 依赖 page cache 五、JDK 版本对内存的影响 5.1 各版本内存特性对比 特性 JDK 8 JDK 11 JDK 17 JDK 21 JDK 25 默认 GC Parallel G1 G1 G1 G1 CompressedOops ≤32G ≤32G ≤32G ≤32G ≤32G ZGC - 实验 实验 正式 正式+分代 Shenandoah - 实验 正式 正式 正式 Metaspace 优化 基础 改进 改进 改进 进一步优化 线程栈 1MB 1MB 1MB 1MB 1MB 内存占用基线 高 中 中低 低 最低 5.2 关键版本差异 JDK 8 → JDK 11 PermGen → Metaspace：PermGen 有固定上限，Metaspace 默认无上限。好处是不会因为类加载多而 OOM，坏处是可能无限增长。1000 管道场景需要显式限制： -XX:MaxMetaspaceSize=2g G1 GC 成熟：JDK 8 默认 Parallel GC，大堆停顿时间长。JDK 11 默认 G1，停顿可控。 JDK 11 → JDK 17 ZGC 实验：大堆场景开始可用，但还不够稳定 内存占用优化：String 去重、紧凑字符串（JEP 254 已在 9 引入，17 更成熟） Metaspace 回收改进：卸载类后 Metaspace 内存更快归还 OS JDK 17 → JDK 21 ZGC 正式发布：生产可用，停顿 \u003c1ms 分代 ZGC（JDK 21 引入 JEP 439）：改善短命对象回收效率 # JDK 21 + ZGC 推荐配置 -Xms16g -Xmx16g -XX:+UseZGC -XX:+ZGenerational Virtual Threads（虚拟线程）：JDK 21 引入，但 Logstash 基于 JRuby，暂未使用 JDK 21 → JDK 25 分代 ZGC 成熟：性能更好 更激进的内存归还：空闲内存更快归还 OS AOT 编译改进：启动更快，Code Cache 更小 5.3 Logstash 捆绑的 JDK 版本 Logstash 版本 捆绑 JDK 说明 7.x JDK 11 LTS 8.x JDK 17 LTS 9.x JDK 21 LTS，支持 ZGC 5.4 各 JDK 版本在 1000 管道场景下的内存差异 维度 JDK 8 JDK 11 JDK 17 JDK 21 基线内存（1 管道） ~600MB ~550MB ~520MB ~535MB G1 停顿（16G 堆） - 200-500ms 100-300ms 50-200ms ZGC 可用 ❌ ⚠️实验 ⚠️实验 ✅正式 ZGC 停顿 - - - \u003c1ms Metaspace 回收 差 一般 好 好 推荐度 ❌ ⚠️ ✅ ✅✅ 结论：Logstash 9.x 捆绑 JDK 21 是 1000 管道场景的最佳选择，ZGC 是核心优势。\n六、GC 选择：G1 vs ZGC 6.1 1000 管道场景的 GC 特征 大量短命对象（Event 在 filter 处理后即可回收） 高线程数（12000+） 堆大（8-16GB） 对延迟敏感（GC 停顿会导致数据积压） 6.2 G1 vs ZGC 对比 维度 G1 ZGC（分代） 停顿时间 50-500ms \u003c1ms 吞吐量 高 中（约低 5-10%） 内存开销 堆的 5-10% 堆的 10-15% 调参难度 中 低（几乎免调参） 适合堆大小 ≤ 32GB 任意 1000 管道推荐 ⚠️ 可用 ✅ 推荐 6.3 推荐配置 # 方案 A：G1（适合堆 ≤ 32G，追求吞吐） LS_JAVA_OPTS=\"-Xms16g -Xmx16g \\ -XX:+UseG1GC \\ -XX:MaxGCPauseMillis=100 \\ -XX:G1HeapRegionSize=16m \\ -XX:InitiatingHeapOccupancyPercent=35 \\ -XX:MaxMetaspaceSize=2g \\ -Xss512k\" # 方案 B：ZGC 分代（推荐，大堆 + 低延迟） LS_JAVA_OPTS=\"-Xms32g -Xmx32g \\ -XX:+UseZGC \\ -XX:+ZGenerational \\ -XX:MaxMetaspaceSize=2g \\ -Xss512k \\ -XX:SoftMaxHeapSize=24g\" SoftMaxHeapSize 是 ZGC 特有参数：JVM 尽量将堆控制在 24G 以内，但允许弹性扩展到 32G。兼顾内存效率和峰值应对。\n七、1000 管道场景的内存优化 7.1 线程栈优化 # 默认 1MB → 512KB，节省 ~6GB -Xss512k 7.2 管道队列优化 # 每个管道的队列配置 - pipeline.id: xxx pipeline.workers: 1 pipeline.batch.size: 50 queue.type: memory queue.max_events: 1000 # 限制内存队列大小 queue.page_capacity: 50mb # PQ 场景减小页大小 7.3 连接池共享 1000 个管道如果都连同一个 ES 集群，应该共享连接池。但 Logstash 每个管道独立，无法共享。替代方案：\n方案 1：减少 ES output 管道，用管道间通信（pipeline-to-pipeline） 方案 2：中间加 Kafka，由少量专用管道消费写入 ES 7.4 pipeline.ordered 优化 pipeline.ordered: false # 关闭事件排序，减少内存开销 实测每个管道关闭 pipeline.ordered 可节省约 2-3MB 堆内存，1000 管道节省 2-3GB。\n7.5 优化后的内存估算 内存区域 优化前 优化后 优化手段 JVM Heap 8-16GB 8-12GB 队列限大小 + ordered=false Thread Stacks 12GB 6GB -Xss512k Metaspace 2GB 2GB MaxMetaspaceSize=2g Direct Memory 2GB 2GB Code Cache 240MB 240MB GC 开销 2GB 3GB ZGC 开销更大 管道基础开销 15GB 12GB ordered=false 合计 40-50GB 33-37GB 7.6 最终推荐配置 128G 内存分配： ├── Logstash JVM Heap 32GB (ZGC，大堆低延迟) ├── 堆外内存 ~15GB (线程栈+Metaspace+Direct+CodeCache+GC) ├── OS Page Cache ~50GB (Kafka消费/file input 加速) ├── PQ 磁盘缓冲 ~20GB (持久化队列场景) └── 余量 ~11GB (应对峰值和异常) 八、为什么 128G 是必要的？ 8.1 不只是进程内存 很多人只看进程 RSS，忽略了 OS page cache 的作用：\n依赖 page cache 的场景 影响 file input 读取日志 无 page cache → 磁盘随机读 → 吞吐暴跌 Kafka 消费 Kafka 依赖 OS page cache 提供高吞吐 PQ 读写 PQ 文件需要 page cache 加速 ES output 批量写入 批量缓冲在 page cache 中 经验法则：OS page cache 至少等于 Logstash 进程内存。\n8.2 内存弹性需求 1000 管道中，不可能所有管道同时满载。但需要为峰值预留：\n正常运行：33-37GB 部分管道流量突增：+10-20GB GC 最差情况（Full GC / ZGC 堆扩展）：+5-10GB OS page cache 需求：30-50GB 128G 的分配逻辑：\n进程内存 50GB + Page Cache 50GB + 余量 28GB = 128GB 8.3 如果只有 64G 会怎样？ 配置 表现 64G，堆 16G ⚠️ Page Cache 只有 ~30GB，Kafka/file 吞吐受限 64G，堆 32G ❌ Page Cache 只有 ~15GB，IO 性能严重下降 64G，堆 8G ⚠️ 堆太小，1000 管道 GC 压力大 64G 能跑，但性能会打折。128G 是舒适区。\n九、总结 核心数据 指标 实测值 1 管道基线 RSS 535MB（256m 堆） 每管道增量 RSS ~3.4MB 每管道增量线程 ~12 个 每管道增量堆 ~4.4MB 1000 管道内存需求 场景 推荐内存 纯内存队列、中等吞吐 64GB（最低） PQ 持久化队列、高吞吐 128GB（推荐） PQ + Kafka + 大吞吐 256GB（舒适） 关键结论 128G 对 1000 管道是必要且合理的——一半给进程，一半给 OS page cache 线程栈是最大隐藏开销——12000 线程 × 1MB = 12GB，-Xss512k 可省一半 JDK 21 + ZGC 是 1000 管道的最优选择——停顿 \u003c1ms，几乎免调参 CompressedOops 阈值在 32G——堆超过 32G 反而更浪费，用 SoftMaxHeapSize 控制 不能只看进程 RSS——OS page cache 对 IO 性能至关重要，至少预留与进程等量的内存 ",
+  "wordCount" : "1265",
+  "inLanguage": "en",
+  "datePublished": "2026-05-09T00:00:00Z",
+  "dateModified": "2026-05-09T00:00:00Z",
+  "author":{
+    "@type": "Person",
+    "name": "Jackray"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://localhost:1313/posts/logstash-jvm-memory-and-1000-pipelines/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "SoulLand",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://localhost:1313/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+<body id="top">
+    <header class="header">
+    <nav class="header-nav">
+        <div class="logo">
+            <a href="http://localhost:1313/" accesskey="h" title="SoulLand (Alt + H)">
+                <img src="http://localhost:1313/apple-touch-icon.png" alt="" aria-label="logo"
+                    height="35">SoulLand</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" class="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg class="moon" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg class="sun" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu" class="menu">
+            <li>
+                <a href="http://localhost:1313/posts/" title="📝 文章">
+                    <span>📝 文章</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/tags/" title="🏷️ 标签">
+                    <span>🏷️ 标签</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/archives/" title="📁 归档">
+                    <span>📁 归档</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/search/" title="🔍 搜索 (Alt &#43; /)" accesskey=/>
+                    <span>🔍 搜索</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <nav class="breadcrumbs" role="navigation" aria-label="Breadcrumb">
+            <a href="/">Home</a>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-right">
+                <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+            <a href="/posts/">Posts</a>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-right">
+        <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+</nav>
+    <h1 class="post-title entry-hint-parent">
+      Logstash 内存深度分析：1000 管道场景下 128G 内存是否必要？
+    </h1>
+    <div class="post-meta">
+
+<span title='2026-05-09 00:00:00 +0000 UTC'>May 9, 2026</span>&nbsp;·&nbsp;<span>6 min</span>&nbsp;·&nbsp;<span>Jackray</span>
+
+</div>
+  </header> <details class="toc"  open>
+    <summary accesskey="c" title="(Alt + C)">
+        <span class="title">Table of Contents</span>
+    </summary>
+
+    <div class="inner"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#一问题背景">一、问题背景</a></li>
+    <li><a href="#二jvm-内存模型">二、JVM 内存模型</a>
+      <ul>
+        <li><a href="#21-各区域与-logstash-的关系">2.1 各区域与 Logstash 的关系</a></li>
+      </ul>
+    </li>
+    <li><a href="#三实测数据">三、实测数据</a>
+      <ul>
+        <li><a href="#31-测试环境">3.1 测试环境</a></li>
+        <li><a href="#32-实测结果">3.2 实测结果</a></li>
+        <li><a href="#33-增量分析">3.3 增量分析</a></li>
+        <li><a href="#34-内存拆解1-管道基线">3.4 内存拆解（1 管道基线）</a></li>
+      </ul>
+    </li>
+    <li><a href="#四1000-管道内存需求计算">四、1000 管道内存需求计算</a>
+      <ul>
+        <li><a href="#41-理论计算">4.1 理论计算</a></li>
+        <li><a href="#42-1000-管道内存估算汇总">4.2 1000 管道内存估算汇总</a></li>
+        <li><a href="#43-关键发现线程栈是最大隐藏开销">4.3 关键发现：线程栈是最大隐藏开销</a></li>
+        <li><a href="#44-128g-够不够">4.4 128G 够不够？</a></li>
+      </ul>
+    </li>
+    <li><a href="#五jdk-版本对内存的影响">五、JDK 版本对内存的影响</a>
+      <ul>
+        <li><a href="#51-各版本内存特性对比">5.1 各版本内存特性对比</a></li>
+        <li><a href="#52-关键版本差异">5.2 关键版本差异</a></li>
+        <li><a href="#53-logstash-捆绑的-jdk-版本">5.3 Logstash 捆绑的 JDK 版本</a></li>
+        <li><a href="#54-各-jdk-版本在-1000-管道场景下的内存差异">5.4 各 JDK 版本在 1000 管道场景下的内存差异</a></li>
+      </ul>
+    </li>
+    <li><a href="#六gc-选择g1-vs-zgc">六、GC 选择：G1 vs ZGC</a>
+      <ul>
+        <li><a href="#61-1000-管道场景的-gc-特征">6.1 1000 管道场景的 GC 特征</a></li>
+        <li><a href="#62-g1-vs-zgc-对比">6.2 G1 vs ZGC 对比</a></li>
+        <li><a href="#63-推荐配置">6.3 推荐配置</a></li>
+      </ul>
+    </li>
+    <li><a href="#七1000-管道场景的内存优化">七、1000 管道场景的内存优化</a>
+      <ul>
+        <li><a href="#71-线程栈优化">7.1 线程栈优化</a></li>
+        <li><a href="#72-管道队列优化">7.2 管道队列优化</a></li>
+        <li><a href="#73-连接池共享">7.3 连接池共享</a></li>
+        <li><a href="#74-pipelineordered-优化">7.4 pipeline.ordered 优化</a></li>
+        <li><a href="#75-优化后的内存估算">7.5 优化后的内存估算</a></li>
+        <li><a href="#76-最终推荐配置">7.6 最终推荐配置</a></li>
+      </ul>
+    </li>
+    <li><a href="#八为什么-128g-是必要的">八、为什么 128G 是必要的？</a>
+      <ul>
+        <li><a href="#81-不只是进程内存">8.1 不只是进程内存</a></li>
+        <li><a href="#82-内存弹性需求">8.2 内存弹性需求</a></li>
+        <li><a href="#83-如果只有-64g-会怎样">8.3 如果只有 64G 会怎样？</a></li>
+      </ul>
+    </li>
+    <li><a href="#九总结">九、总结</a>
+      <ul>
+        <li><a href="#核心数据">核心数据</a></li>
+        <li><a href="#1000-管道内存需求">1000 管道内存需求</a></li>
+        <li><a href="#关键结论">关键结论</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+    </div>
+</details>
+
+  <div class="post-content md-content"><h2 id="一问题背景">一、问题背景<a hidden class="anchor" aria-hidden="true" href="#一问题背景">#</a></h2>
+<p>当一个 Logstash 节点承载 1000 个管道时，128G 内存是否够用？要回答这个问题，需要理解：</p>
+<ol>
+<li>Logstash 进程的内存由哪些部分组成？</li>
+<li>每增加一个管道，额外消耗多少内存？</li>
+<li>JDK 版本对内存有什么影响？</li>
+<li>1000 管道的真实内存需求是多少？</li>
+</ol>
+<hr>
+<h2 id="二jvm-内存模型">二、JVM 内存模型<a hidden class="anchor" aria-hidden="true" href="#二jvm-内存模型">#</a></h2>
+<p>Logstash 运行在 JVM 上，一个 Java 进程的内存远不止堆：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>┌─────────────────────────────────────────────┐
+</span></span><span style="display:flex;"><span>│              Java 进程内存                    │
+</span></span><span style="display:flex;"><span>├─────────────────────────────────────────────┤
+</span></span><span style="display:flex;"><span>│                                             │
+</span></span><span style="display:flex;"><span>│  ┌─────────────────────────────────┐        │
+</span></span><span style="display:flex;"><span>│  │        Java Heap（堆）           │        │
+</span></span><span style="display:flex;"><span>│  │   -Xms / -Xmx 控制              │        │
+</span></span><span style="display:flex;"><span>│  │   对象实例、队列、缓存            │        │
+</span></span><span style="display:flex;"><span>│  └─────────────────────────────────┘        │
+</span></span><span style="display:flex;"><span>│                                             │
+</span></span><span style="display:flex;"><span>│  ┌─────────────────────────────────┐        │
+</span></span><span style="display:flex;"><span>│  │       Metaspace（元空间）         │        │
+</span></span><span style="display:flex;"><span>│  │   类元数据、方法信息、常量池       │        │
+</span></span><span style="display:flex;"><span>│  │   默认无上限（受限于宿主内存）     │        │
+</span></span><span style="display:flex;"><span>│  └─────────────────────────────────┘        │
+</span></span><span style="display:flex;"><span>│                                             │
+</span></span><span style="display:flex;"><span>│  ┌─────────────────────────────────┐        │
+</span></span><span style="display:flex;"><span>│  │      Thread Stacks（线程栈）      │        │
+</span></span><span style="display:flex;"><span>│  │   每线程 ~1MB                    │        │
+</span></span><span style="display:flex;"><span>│  │   1000 线程 = ~1GB              │        │
+</span></span><span style="display:flex;"><span>│  └─────────────────────────────────┘        │
+</span></span><span style="display:flex;"><span>│                                             │
+</span></span><span style="display:flex;"><span>│  ┌─────────────────────────────────┐        │
+</span></span><span style="display:flex;"><span>│  │     Direct Memory（堆外内存）     │        │
+</span></span><span style="display:flex;"><span>│  │   NIO ByteBuffer、网络缓冲区     │        │
+</span></span><span style="display:flex;"><span>│  │   默认 = -Xmx                   │        │
+</span></span><span style="display:flex;"><span>│  └─────────────────────────────────┘        │
+</span></span><span style="display:flex;"><span>│                                             │
+</span></span><span style="display:flex;"><span>│  ┌─────────────────────────────────┐        │
+</span></span><span style="display:flex;"><span>│  │       Code Cache（代码缓存）      │        │
+</span></span><span style="display:flex;"><span>│  │   JIT 编译后的本地代码            │        │
+</span></span><span style="display:flex;"><span>│  │   默认 ~240MB                   │        │
+</span></span><span style="display:flex;"><span>│  └─────────────────────────────────┘        │
+</span></span><span style="display:flex;"><span>│                                             │
+</span></span><span style="display:flex;"><span>│  ┌─────────────────────────────────┐        │
+</span></span><span style="display:flex;"><span>│  │       GC 自身开销                 │        │
+</span></span><span style="display:flex;"><span>│  │   卡表、记忆集、标记位图          │        │
+</span></span><span style="display:flex;"><span>│  │   与堆大小成正比                  │        │
+</span></span><span style="display:flex;"><span>│  └─────────────────────────────────┘        │
+</span></span><span style="display:flex;"><span>│                                             │
+</span></span><span style="display:flex;"><span>└─────────────────────────────────────────────┘
+</span></span></code></pre></div><h3 id="21-各区域与-logstash-的关系">2.1 各区域与 Logstash 的关系<a hidden class="anchor" aria-hidden="true" href="#21-各区域与-logstash-的关系">#</a></h3>
+<table>
+  <thead>
+      <tr>
+          <th>内存区域</th>
+          <th>Logstash 用途</th>
+          <th>大小</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><strong>Heap</strong></td>
+          <td>Event 对象、管道队列、插件状态、JRuby 运行时</td>
+          <td><code>-Xmx</code> 控制</td>
+      </tr>
+      <tr>
+          <td><strong>Metaspace</strong></td>
+          <td>JRuby 类定义、Logstash 插件类、grok 正则模式</td>
+          <td>无上限，实测 100-200MB</td>
+      </tr>
+      <tr>
+          <td><strong>Thread Stacks</strong></td>
+          <td>每个 pipeline worker 一个线程</td>
+          <td>每线程 ~1MB</td>
+      </tr>
+      <tr>
+          <td><strong>Direct Memory</strong></td>
+          <td>网络插件的 NIO 缓冲区（Kafka/ES/Beats）</td>
+          <td>与连接数相关</td>
+      </tr>
+      <tr>
+          <td><strong>Code Cache</strong></td>
+          <td>JIT 编译的热点代码</td>
+          <td>~240MB</td>
+      </tr>
+      <tr>
+          <td><strong>GC 开销</strong></td>
+          <td>G1 的记忆集（remembered sets）</td>
+          <td>堆的 5-20%</td>
+      </tr>
+  </tbody>
+</table>
+<hr>
+<h2 id="三实测数据">三、实测数据<a hidden class="anchor" aria-hidden="true" href="#三实测数据">#</a></h2>
+<h3 id="31-测试环境">3.1 测试环境<a hidden class="anchor" aria-hidden="true" href="#31-测试环境">#</a></h3>
+<ul>
+<li>Logstash 9.3.2，捆绑 JDK 21.0.10 (Temurin)</li>
+<li>测试机：4核 / 7.1G 内存 / SSD</li>
+<li>管道配置：HTTP input（空闲，不接收数据）→ 空 filter → file output (/dev/null)</li>
+<li>每个 pipeline: <code>workers=1, batch.size=1, queue.type=memory</code></li>
+</ul>
+<h3 id="32-实测结果">3.2 实测结果<a hidden class="anchor" aria-hidden="true" href="#32-实测结果">#</a></h3>
+<table>
+  <thead>
+      <tr>
+          <th>配置</th>
+          <th>JVM 堆</th>
+          <th>RSS（物理内存）</th>
+          <th>堆使用</th>
+          <th>线程数</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>1 管道</td>
+          <td>256m</td>
+          <td><strong>535MB</strong></td>
+          <td>151MB</td>
+          <td>46</td>
+      </tr>
+      <tr>
+          <td>10 管道</td>
+          <td>256m</td>
+          <td><strong>566MB</strong></td>
+          <td>191MB</td>
+          <td>155</td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="33-增量分析">3.3 增量分析<a hidden class="anchor" aria-hidden="true" href="#33-增量分析">#</a></h3>
+<table>
+  <thead>
+      <tr>
+          <th>指标</th>
+          <th>1→10 管道增量</th>
+          <th>每管道增量</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>RSS</td>
+          <td>+31MB</td>
+          <td><strong>~3.4MB/管道</strong></td>
+      </tr>
+      <tr>
+          <td>堆使用</td>
+          <td>+40MB</td>
+          <td><strong>~4.4MB/管道</strong></td>
+      </tr>
+      <tr>
+          <td>线程</td>
+          <td>+109</td>
+          <td><strong>~12 线程/管道</strong></td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="34-内存拆解1-管道基线">3.4 内存拆解（1 管道基线）<a hidden class="anchor" aria-hidden="true" href="#34-内存拆解1-管道基线">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>RSS = 535MB
+</span></span><span style="display:flex;"><span>├── JVM Heap (已用)    151MB   ← Event 对象、JRuby 运行时
+</span></span><span style="display:flex;"><span>├── JVM Heap (未用)    105MB   ← -Xmx256m 已分配但未使用
+</span></span><span style="display:flex;"><span>├── Metaspace          ~120MB  ← JRuby 类、插件类
+</span></span><span style="display:flex;"><span>├── Thread Stacks       46MB  ← 46 线程 × 1MB
+</span></span><span style="display:flex;"><span>├── Code Cache          ~50MB  ← JIT 编译代码
+</span></span><span style="display:flex;"><span>├── Direct Memory       ~30MB  ← NIO 缓冲区
+</span></span><span style="display:flex;"><span>├── GC 开销             ~33MB  ← G1 记忆集
+</span></span><span style="display:flex;"><span>└── 其他                ~0MB
+</span></span></code></pre></div><hr>
+<h2 id="四1000-管道内存需求计算">四、1000 管道内存需求计算<a hidden class="anchor" aria-hidden="true" href="#四1000-管道内存需求计算">#</a></h2>
+<h3 id="41-理论计算">4.1 理论计算<a hidden class="anchor" aria-hidden="true" href="#41-理论计算">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>基线成本（1 管道）:
+</span></span><span style="display:flex;"><span>  JVM + JRuby 启动开销     ~380MB
+</span></span><span style="display:flex;"><span>  1 管道运行时              ~155MB (heap used + threads + metaspace)
+</span></span><span style="display:flex;"><span>  小计                      ~535MB
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>增量成本（999 个额外管道）:
+</span></span><span style="display:flex;"><span>  每管道 RSS                ~3.4MB
+</span></span><span style="display:flex;"><span>  每管道线程                ~12个 × 1MB = 12MB
+</span></span><span style="display:flex;"><span>  实际增量按 15MB/管道估算（含队列、codec、连接池）
+</span></span><span style="display:flex;"><span>  999 × 15MB                ~15GB
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>线程栈:
+</span></span><span style="display:flex;"><span>  1000 × 12线程/管道 = 12000 线程
+</span></span><span style="display:flex;"><span>  12000 × 1MB =              ~12GB
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Metaspace:
+</span></span><span style="display:flex;"><span>  1000 管道共享 JRuby 运行时，但每个管道的插件类不共享
+</span></span><span style="display:flex;"><span>  估算 1000 × 2MB =          ~2GB
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>管道内存队列:
+</span></span><span style="display:flex;"><span>  默认 page 大小 250MB × 1 page × 1000 = 不现实
+</span></span><span style="display:flex;"><span>  实际应设 queue.page_capacity: 50MB, queue.max_events: 1000
+</span></span><span style="display:flex;"><span>  1000 × 50MB =              ~50GB (峰值，不会同时满)
+</span></span><span style="display:flex;"><span>  实际运行中每个队列 ~10MB:   ~10GB
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Direct Memory:
+</span></span><span style="display:flex;"><span>  Kafka/ES 连接的 NIO 缓冲区
+</span></span><span style="display:flex;"><span>  1000 × 2MB =               ~2GB
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>JVM Heap:
+</span></span><span style="display:flex;"><span>  需要容纳所有队列 + Event 对象 + JRuby
+</span></span><span style="display:flex;"><span>  估算                       ~8-16GB
+</span></span></code></pre></div><h3 id="42-1000-管道内存估算汇总">4.2 1000 管道内存估算汇总<a hidden class="anchor" aria-hidden="true" href="#42-1000-管道内存估算汇总">#</a></h3>
+<table>
+  <thead>
+      <tr>
+          <th>内存区域</th>
+          <th>估算</th>
+          <th>说明</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>JVM Heap</td>
+          <td>8-16GB</td>
+          <td>Event 对象 + 队列 + JRuby</td>
+      </tr>
+      <tr>
+          <td>Thread Stacks</td>
+          <td>~12GB</td>
+          <td>12000 线程 × 1MB</td>
+      </tr>
+      <tr>
+          <td>Metaspace</td>
+          <td>~2GB</td>
+          <td>1000 管道的插件类</td>
+      </tr>
+      <tr>
+          <td>Direct Memory</td>
+          <td>~2GB</td>
+          <td>网络 NIO 缓冲</td>
+      </tr>
+      <tr>
+          <td>Code Cache</td>
+          <td>~240MB</td>
+          <td>JIT</td>
+      </tr>
+      <tr>
+          <td>GC 开销</td>
+          <td>~2GB</td>
+          <td>G1 记忆集</td>
+      </tr>
+      <tr>
+          <td>管道基础开销</td>
+          <td>~15GB</td>
+          <td>每管道 ~15MB</td>
+      </tr>
+      <tr>
+          <td><strong>合计</strong></td>
+          <td><strong>~40-50GB</strong></td>
+          <td></td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="43-关键发现线程栈是最大隐藏开销">4.3 关键发现：线程栈是最大隐藏开销<a hidden class="anchor" aria-hidden="true" href="#43-关键发现线程栈是最大隐藏开销">#</a></h3>
+<p>1000 管道 × 12 线程/管道 = <strong>12000 线程</strong>，仅线程栈就占 <strong>12GB</strong>。这是很多人忽略的。</p>
+<p>可以通过减小线程栈来优化：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#8be9fd;font-style:italic">LS_JAVA_OPTS</span><span style="color:#ff79c6">=</span><span style="color:#f1fa8c">&#34;-Xms16g -Xmx16g -Xss512k&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#6272a4">#                                    ^^^^^^^</span>
+</span></span><span style="display:flex;"><span><span style="color:#6272a4">#                              默认 1MB → 改为 512KB</span>
+</span></span><span style="display:flex;"><span><span style="color:#6272a4">#                              节省 6GB 线程栈内存</span>
+</span></span></code></pre></div><p>但要注意：<code>-Xss</code> 过小可能导致 StackOverflowError，尤其是 grok 正则嵌套深时。<strong>512KB 是经验下限</strong>。</p>
+<h3 id="44-128g-够不够">4.4 128G 够不够？<a hidden class="anchor" aria-hidden="true" href="#44-128g-够不够">#</a></h3>
+<table>
+  <thead>
+      <tr>
+          <th>场景</th>
+          <th>内存需求</th>
+          <th>128G 是否够</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>1000 管道，默认配置</td>
+          <td>40-50GB</td>
+          <td>✅ 绰绰有余</td>
+      </tr>
+      <tr>
+          <td>1000 管道，含 Kafka/ES 连接池</td>
+          <td>50-60GB</td>
+          <td>✅ 够用</td>
+      </tr>
+      <tr>
+          <td>1000 管道，PQ 持久化队列</td>
+          <td>80-100GB</td>
+          <td>✅ 勉强够</td>
+      </tr>
+      <tr>
+          <td>1000 管道，大吞吐 + 大队列</td>
+          <td>100GB+</td>
+          <td>⚠️ 需要评估</td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>结论：128G 对 1000 管道是合理的配置，甚至可以说是必要的下限。</strong></p>
+<p>原因：</p>
+<ol>
+<li>50GB 进程内存 + 50GB OS page cache + 28GB 余量 = 128GB</li>
+<li>OS page cache 对 file input / Kafka 消费至关重要</li>
+<li>需要余量应对 GC 最差情况（全堆对象晋升 + 记忆集膨胀）</li>
+<li>PQ（持久化队列）场景下磁盘 IO 依赖 page cache</li>
+</ol>
+<hr>
+<h2 id="五jdk-版本对内存的影响">五、JDK 版本对内存的影响<a hidden class="anchor" aria-hidden="true" href="#五jdk-版本对内存的影响">#</a></h2>
+<h3 id="51-各版本内存特性对比">5.1 各版本内存特性对比<a hidden class="anchor" aria-hidden="true" href="#51-各版本内存特性对比">#</a></h3>
+<table>
+  <thead>
+      <tr>
+          <th>特性</th>
+          <th>JDK 8</th>
+          <th>JDK 11</th>
+          <th>JDK 17</th>
+          <th>JDK 21</th>
+          <th>JDK 25</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>默认 GC</td>
+          <td>Parallel</td>
+          <td>G1</td>
+          <td>G1</td>
+          <td>G1</td>
+          <td>G1</td>
+      </tr>
+      <tr>
+          <td>CompressedOops</td>
+          <td>≤32G</td>
+          <td>≤32G</td>
+          <td>≤32G</td>
+          <td>≤32G</td>
+          <td>≤32G</td>
+      </tr>
+      <tr>
+          <td>ZGC</td>
+          <td>-</td>
+          <td>实验</td>
+          <td>实验</td>
+          <td><strong>正式</strong></td>
+          <td>正式+分代</td>
+      </tr>
+      <tr>
+          <td>Shenandoah</td>
+          <td>-</td>
+          <td>实验</td>
+          <td>正式</td>
+          <td>正式</td>
+          <td>正式</td>
+      </tr>
+      <tr>
+          <td>Metaspace 优化</td>
+          <td>基础</td>
+          <td>改进</td>
+          <td>改进</td>
+          <td>改进</td>
+          <td>进一步优化</td>
+      </tr>
+      <tr>
+          <td>线程栈</td>
+          <td>1MB</td>
+          <td>1MB</td>
+          <td>1MB</td>
+          <td>1MB</td>
+          <td>1MB</td>
+      </tr>
+      <tr>
+          <td>内存占用基线</td>
+          <td>高</td>
+          <td>中</td>
+          <td>中低</td>
+          <td><strong>低</strong></td>
+          <td>最低</td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="52-关键版本差异">5.2 关键版本差异<a hidden class="anchor" aria-hidden="true" href="#52-关键版本差异">#</a></h3>
+<h4 id="jdk-8--jdk-11">JDK 8 → JDK 11<a hidden class="anchor" aria-hidden="true" href="#jdk-8--jdk-11">#</a></h4>
+<ul>
+<li><strong>PermGen → Metaspace</strong>：PermGen 有固定上限，Metaspace 默认无上限。好处是不会因为类加载多而 OOM，坏处是可能无限增长。<strong>1000 管道场景需要显式限制</strong>：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>-XX:MaxMetaspaceSize<span style="color:#ff79c6">=</span>2g
+</span></span></code></pre></div><ul>
+<li><strong>G1 GC 成熟</strong>：JDK 8 默认 Parallel GC，大堆停顿时间长。JDK 11 默认 G1，停顿可控。</li>
+</ul>
+<h4 id="jdk-11--jdk-17">JDK 11 → JDK 17<a hidden class="anchor" aria-hidden="true" href="#jdk-11--jdk-17">#</a></h4>
+<ul>
+<li><strong>ZGC 实验</strong>：大堆场景开始可用，但还不够稳定</li>
+<li><strong>内存占用优化</strong>：String 去重、紧凑字符串（JEP 254 已在 9 引入，17 更成熟）</li>
+<li><strong>Metaspace 回收改进</strong>：卸载类后 Metaspace 内存更快归还 OS</li>
+</ul>
+<h4 id="jdk-17--jdk-21">JDK 17 → JDK 21<a hidden class="anchor" aria-hidden="true" href="#jdk-17--jdk-21">#</a></h4>
+<ul>
+<li><strong>ZGC 正式发布</strong>：生产可用，停顿 &lt;1ms</li>
+<li><strong>分代 ZGC（JDK 21 引入 JEP 439）</strong>：改善短命对象回收效率</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#6272a4"># JDK 21 + ZGC 推荐配置</span>
+</span></span><span style="display:flex;"><span>-Xms16g -Xmx16g -XX:+UseZGC -XX:+ZGenerational
+</span></span></code></pre></div><ul>
+<li><strong>Virtual Threads（虚拟线程）</strong>：JDK 21 引入，但 Logstash 基于 JRuby，暂未使用</li>
+</ul>
+<h4 id="jdk-21--jdk-25">JDK 21 → JDK 25<a hidden class="anchor" aria-hidden="true" href="#jdk-21--jdk-25">#</a></h4>
+<ul>
+<li><strong>分代 ZGC 成熟</strong>：性能更好</li>
+<li><strong>更激进的内存归还</strong>：空闲内存更快归还 OS</li>
+<li><strong>AOT 编译改进</strong>：启动更快，Code Cache 更小</li>
+</ul>
+<h3 id="53-logstash-捆绑的-jdk-版本">5.3 Logstash 捆绑的 JDK 版本<a hidden class="anchor" aria-hidden="true" href="#53-logstash-捆绑的-jdk-版本">#</a></h3>
+<table>
+  <thead>
+      <tr>
+          <th>Logstash 版本</th>
+          <th>捆绑 JDK</th>
+          <th>说明</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>7.x</td>
+          <td>JDK 11</td>
+          <td>LTS</td>
+      </tr>
+      <tr>
+          <td>8.x</td>
+          <td>JDK 17</td>
+          <td>LTS</td>
+      </tr>
+      <tr>
+          <td>9.x</td>
+          <td><strong>JDK 21</strong></td>
+          <td>LTS，支持 ZGC</td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="54-各-jdk-版本在-1000-管道场景下的内存差异">5.4 各 JDK 版本在 1000 管道场景下的内存差异<a hidden class="anchor" aria-hidden="true" href="#54-各-jdk-版本在-1000-管道场景下的内存差异">#</a></h3>
+<table>
+  <thead>
+      <tr>
+          <th>维度</th>
+          <th>JDK 8</th>
+          <th>JDK 11</th>
+          <th>JDK 17</th>
+          <th>JDK 21</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>基线内存（1 管道）</td>
+          <td>~600MB</td>
+          <td>~550MB</td>
+          <td>~520MB</td>
+          <td><strong>~535MB</strong></td>
+      </tr>
+      <tr>
+          <td>G1 停顿（16G 堆）</td>
+          <td>-</td>
+          <td>200-500ms</td>
+          <td>100-300ms</td>
+          <td><strong>50-200ms</strong></td>
+      </tr>
+      <tr>
+          <td>ZGC 可用</td>
+          <td>❌</td>
+          <td>⚠️实验</td>
+          <td>⚠️实验</td>
+          <td>✅正式</td>
+      </tr>
+      <tr>
+          <td>ZGC 停顿</td>
+          <td>-</td>
+          <td>-</td>
+          <td>-</td>
+          <td><strong>&lt;1ms</strong></td>
+      </tr>
+      <tr>
+          <td>Metaspace 回收</td>
+          <td>差</td>
+          <td>一般</td>
+          <td>好</td>
+          <td><strong>好</strong></td>
+      </tr>
+      <tr>
+          <td>推荐度</td>
+          <td>❌</td>
+          <td>⚠️</td>
+          <td>✅</td>
+          <td><strong>✅✅</strong></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>结论：Logstash 9.x 捆绑 JDK 21 是 1000 管道场景的最佳选择，ZGC 是核心优势。</strong></p>
+<hr>
+<h2 id="六gc-选择g1-vs-zgc">六、GC 选择：G1 vs ZGC<a hidden class="anchor" aria-hidden="true" href="#六gc-选择g1-vs-zgc">#</a></h2>
+<h3 id="61-1000-管道场景的-gc-特征">6.1 1000 管道场景的 GC 特征<a hidden class="anchor" aria-hidden="true" href="#61-1000-管道场景的-gc-特征">#</a></h3>
+<ul>
+<li>大量短命对象（Event 在 filter 处理后即可回收）</li>
+<li>高线程数（12000+）</li>
+<li>堆大（8-16GB）</li>
+<li>对延迟敏感（GC 停顿会导致数据积压）</li>
+</ul>
+<h3 id="62-g1-vs-zgc-对比">6.2 G1 vs ZGC 对比<a hidden class="anchor" aria-hidden="true" href="#62-g1-vs-zgc-对比">#</a></h3>
+<table>
+  <thead>
+      <tr>
+          <th>维度</th>
+          <th>G1</th>
+          <th>ZGC（分代）</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>停顿时间</td>
+          <td>50-500ms</td>
+          <td>&lt;1ms</td>
+      </tr>
+      <tr>
+          <td>吞吐量</td>
+          <td><strong>高</strong></td>
+          <td>中（约低 5-10%）</td>
+      </tr>
+      <tr>
+          <td>内存开销</td>
+          <td>堆的 5-10%</td>
+          <td>堆的 10-15%</td>
+      </tr>
+      <tr>
+          <td>调参难度</td>
+          <td>中</td>
+          <td><strong>低</strong>（几乎免调参）</td>
+      </tr>
+      <tr>
+          <td>适合堆大小</td>
+          <td>≤ 32GB</td>
+          <td><strong>任意</strong></td>
+      </tr>
+      <tr>
+          <td>1000 管道推荐</td>
+          <td>⚠️ 可用</td>
+          <td><strong>✅ 推荐</strong></td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="63-推荐配置">6.3 推荐配置<a hidden class="anchor" aria-hidden="true" href="#63-推荐配置">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#6272a4"># 方案 A：G1（适合堆 ≤ 32G，追求吞吐）</span>
+</span></span><span style="display:flex;"><span><span style="color:#8be9fd;font-style:italic">LS_JAVA_OPTS</span><span style="color:#ff79c6">=</span><span style="color:#f1fa8c">&#34;-Xms16g -Xmx16g \
+</span></span></span><span style="display:flex;"><span><span style="color:#f1fa8c">  -XX:+UseG1GC \
+</span></span></span><span style="display:flex;"><span><span style="color:#f1fa8c">  -XX:MaxGCPauseMillis=100 \
+</span></span></span><span style="display:flex;"><span><span style="color:#f1fa8c">  -XX:G1HeapRegionSize=16m \
+</span></span></span><span style="display:flex;"><span><span style="color:#f1fa8c">  -XX:InitiatingHeapOccupancyPercent=35 \
+</span></span></span><span style="display:flex;"><span><span style="color:#f1fa8c">  -XX:MaxMetaspaceSize=2g \
+</span></span></span><span style="display:flex;"><span><span style="color:#f1fa8c">  -Xss512k&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#6272a4"># 方案 B：ZGC 分代（推荐，大堆 + 低延迟）</span>
+</span></span><span style="display:flex;"><span><span style="color:#8be9fd;font-style:italic">LS_JAVA_OPTS</span><span style="color:#ff79c6">=</span><span style="color:#f1fa8c">&#34;-Xms32g -Xmx32g \
+</span></span></span><span style="display:flex;"><span><span style="color:#f1fa8c">  -XX:+UseZGC \
+</span></span></span><span style="display:flex;"><span><span style="color:#f1fa8c">  -XX:+ZGenerational \
+</span></span></span><span style="display:flex;"><span><span style="color:#f1fa8c">  -XX:MaxMetaspaceSize=2g \
+</span></span></span><span style="display:flex;"><span><span style="color:#f1fa8c">  -Xss512k \
+</span></span></span><span style="display:flex;"><span><span style="color:#f1fa8c">  -XX:SoftMaxHeapSize=24g&#34;</span>
+</span></span></code></pre></div><blockquote>
+<p><code>SoftMaxHeapSize</code> 是 ZGC 特有参数：JVM 尽量将堆控制在 24G 以内，但允许弹性扩展到 32G。兼顾内存效率和峰值应对。</p>
+</blockquote>
+<hr>
+<h2 id="七1000-管道场景的内存优化">七、1000 管道场景的内存优化<a hidden class="anchor" aria-hidden="true" href="#七1000-管道场景的内存优化">#</a></h2>
+<h3 id="71-线程栈优化">7.1 线程栈优化<a hidden class="anchor" aria-hidden="true" href="#71-线程栈优化">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#6272a4"># 默认 1MB → 512KB，节省 ~6GB</span>
+</span></span><span style="display:flex;"><span>-Xss512k
+</span></span></code></pre></div><h3 id="72-管道队列优化">7.2 管道队列优化<a hidden class="anchor" aria-hidden="true" href="#72-管道队列优化">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#6272a4"># 每个管道的队列配置</span>
+</span></span><span style="display:flex;"><span>- <span style="color:#ff79c6">pipeline.id</span>: xxx
+</span></span><span style="display:flex;"><span>  <span style="color:#ff79c6">pipeline.workers</span>: <span style="color:#bd93f9">1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#ff79c6">pipeline.batch.size</span>: <span style="color:#bd93f9">50</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#ff79c6">queue.type</span>: memory
+</span></span><span style="display:flex;"><span>  <span style="color:#ff79c6">queue.max_events</span>: <span style="color:#bd93f9">1000</span>          <span style="color:#6272a4"># 限制内存队列大小</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#ff79c6">queue.page_capacity</span>: 50mb       <span style="color:#6272a4"># PQ 场景减小页大小</span>
+</span></span></code></pre></div><h3 id="73-连接池共享">7.3 连接池共享<a hidden class="anchor" aria-hidden="true" href="#73-连接池共享">#</a></h3>
+<p>1000 个管道如果都连同一个 ES 集群，应该共享连接池。但 Logstash <strong>每个管道独立</strong>，无法共享。替代方案：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>方案 1：减少 ES output 管道，用管道间通信（pipeline-to-pipeline）
+</span></span><span style="display:flex;"><span>方案 2：中间加 Kafka，由少量专用管道消费写入 ES
+</span></span></code></pre></div><h3 id="74-pipelineordered-优化">7.4 pipeline.ordered 优化<a hidden class="anchor" aria-hidden="true" href="#74-pipelineordered-优化">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#ff79c6">pipeline.ordered</span>: <span style="color:#ff79c6">false</span>    <span style="color:#6272a4"># 关闭事件排序，减少内存开销</span>
+</span></span></code></pre></div><p>实测每个管道关闭 <code>pipeline.ordered</code> 可节省约 2-3MB 堆内存，1000 管道节省 2-3GB。</p>
+<h3 id="75-优化后的内存估算">7.5 优化后的内存估算<a hidden class="anchor" aria-hidden="true" href="#75-优化后的内存估算">#</a></h3>
+<table>
+  <thead>
+      <tr>
+          <th>内存区域</th>
+          <th>优化前</th>
+          <th>优化后</th>
+          <th>优化手段</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>JVM Heap</td>
+          <td>8-16GB</td>
+          <td>8-12GB</td>
+          <td>队列限大小 + ordered=false</td>
+      </tr>
+      <tr>
+          <td>Thread Stacks</td>
+          <td>12GB</td>
+          <td><strong>6GB</strong></td>
+          <td>-Xss512k</td>
+      </tr>
+      <tr>
+          <td>Metaspace</td>
+          <td>2GB</td>
+          <td>2GB</td>
+          <td>MaxMetaspaceSize=2g</td>
+      </tr>
+      <tr>
+          <td>Direct Memory</td>
+          <td>2GB</td>
+          <td>2GB</td>
+          <td></td>
+      </tr>
+      <tr>
+          <td>Code Cache</td>
+          <td>240MB</td>
+          <td>240MB</td>
+          <td></td>
+      </tr>
+      <tr>
+          <td>GC 开销</td>
+          <td>2GB</td>
+          <td>3GB</td>
+          <td>ZGC 开销更大</td>
+      </tr>
+      <tr>
+          <td>管道基础开销</td>
+          <td>15GB</td>
+          <td>12GB</td>
+          <td>ordered=false</td>
+      </tr>
+      <tr>
+          <td><strong>合计</strong></td>
+          <td><strong>40-50GB</strong></td>
+          <td><strong>33-37GB</strong></td>
+          <td></td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="76-最终推荐配置">7.6 最终推荐配置<a hidden class="anchor" aria-hidden="true" href="#76-最终推荐配置">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>128G 内存分配：
+</span></span><span style="display:flex;"><span>├── Logstash JVM Heap       32GB   (ZGC，大堆低延迟)
+</span></span><span style="display:flex;"><span>├── 堆外内存                ~15GB   (线程栈+Metaspace+Direct+CodeCache+GC)
+</span></span><span style="display:flex;"><span>├── OS Page Cache           ~50GB   (Kafka消费/file input 加速)
+</span></span><span style="display:flex;"><span>├── PQ 磁盘缓冲             ~20GB   (持久化队列场景)
+</span></span><span style="display:flex;"><span>└── 余量                    ~11GB   (应对峰值和异常)
+</span></span></code></pre></div><hr>
+<h2 id="八为什么-128g-是必要的">八、为什么 128G 是必要的？<a hidden class="anchor" aria-hidden="true" href="#八为什么-128g-是必要的">#</a></h2>
+<h3 id="81-不只是进程内存">8.1 不只是进程内存<a hidden class="anchor" aria-hidden="true" href="#81-不只是进程内存">#</a></h3>
+<p>很多人只看进程 RSS，忽略了 OS page cache 的作用：</p>
+<table>
+  <thead>
+      <tr>
+          <th>依赖 page cache 的场景</th>
+          <th>影响</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>file input 读取日志</td>
+          <td>无 page cache → 磁盘随机读 → 吞吐暴跌</td>
+      </tr>
+      <tr>
+          <td>Kafka 消费</td>
+          <td>Kafka 依赖 OS page cache 提供高吞吐</td>
+      </tr>
+      <tr>
+          <td>PQ 读写</td>
+          <td>PQ 文件需要 page cache 加速</td>
+      </tr>
+      <tr>
+          <td>ES output 批量写入</td>
+          <td>批量缓冲在 page cache 中</td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>经验法则：OS page cache 至少等于 Logstash 进程内存。</strong></p>
+<h3 id="82-内存弹性需求">8.2 内存弹性需求<a hidden class="anchor" aria-hidden="true" href="#82-内存弹性需求">#</a></h3>
+<p>1000 管道中，不可能所有管道同时满载。但需要为峰值预留：</p>
+<ul>
+<li>正常运行：33-37GB</li>
+<li>部分管道流量突增：+10-20GB</li>
+<li>GC 最差情况（Full GC / ZGC 堆扩展）：+5-10GB</li>
+<li>OS page cache 需求：30-50GB</li>
+</ul>
+<p><strong>128G 的分配逻辑</strong>：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:2;-o-tab-size:2;tab-size:2;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>进程内存 50GB + Page Cache 50GB + 余量 28GB = 128GB
+</span></span></code></pre></div><h3 id="83-如果只有-64g-会怎样">8.3 如果只有 64G 会怎样？<a hidden class="anchor" aria-hidden="true" href="#83-如果只有-64g-会怎样">#</a></h3>
+<table>
+  <thead>
+      <tr>
+          <th>配置</th>
+          <th>表现</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>64G，堆 16G</td>
+          <td>⚠️ Page Cache 只有 ~30GB，Kafka/file 吞吐受限</td>
+      </tr>
+      <tr>
+          <td>64G，堆 32G</td>
+          <td>❌ Page Cache 只有 ~15GB，IO 性能严重下降</td>
+      </tr>
+      <tr>
+          <td>64G，堆 8G</td>
+          <td>⚠️ 堆太小，1000 管道 GC 压力大</td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>64G 能跑，但性能会打折。128G 是舒适区。</strong></p>
+<hr>
+<h2 id="九总结">九、总结<a hidden class="anchor" aria-hidden="true" href="#九总结">#</a></h2>
+<h3 id="核心数据">核心数据<a hidden class="anchor" aria-hidden="true" href="#核心数据">#</a></h3>
+<table>
+  <thead>
+      <tr>
+          <th>指标</th>
+          <th>实测值</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>1 管道基线 RSS</td>
+          <td>535MB（256m 堆）</td>
+      </tr>
+      <tr>
+          <td>每管道增量 RSS</td>
+          <td>~3.4MB</td>
+      </tr>
+      <tr>
+          <td>每管道增量线程</td>
+          <td>~12 个</td>
+      </tr>
+      <tr>
+          <td>每管道增量堆</td>
+          <td>~4.4MB</td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="1000-管道内存需求">1000 管道内存需求<a hidden class="anchor" aria-hidden="true" href="#1000-管道内存需求">#</a></h3>
+<table>
+  <thead>
+      <tr>
+          <th>场景</th>
+          <th>推荐内存</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>纯内存队列、中等吞吐</td>
+          <td><strong>64GB</strong>（最低）</td>
+      </tr>
+      <tr>
+          <td>PQ 持久化队列、高吞吐</td>
+          <td><strong>128GB</strong>（推荐）</td>
+      </tr>
+      <tr>
+          <td>PQ + Kafka + 大吞吐</td>
+          <td><strong>256GB</strong>（舒适）</td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="关键结论">关键结论<a hidden class="anchor" aria-hidden="true" href="#关键结论">#</a></h3>
+<ol>
+<li><strong>128G 对 1000 管道是必要且合理的</strong>——一半给进程，一半给 OS page cache</li>
+<li><strong>线程栈是最大隐藏开销</strong>——12000 线程 × 1MB = 12GB，<code>-Xss512k</code> 可省一半</li>
+<li><strong>JDK 21 + ZGC 是 1000 管道的最优选择</strong>——停顿 &lt;1ms，几乎免调参</li>
+<li><strong>CompressedOops 阈值在 32G</strong>——堆超过 32G 反而更浪费，用 <code>SoftMaxHeapSize</code> 控制</li>
+<li><strong>不能只看进程 RSS</strong>——OS page cache 对 IO 性能至关重要，至少预留与进程等量的内存</li>
+</ol>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="http://localhost:1313/tags/logstash/">Logstash</a></li>
+      <li><a href="http://localhost:1313/tags/jvm/">JVM</a></li>
+      <li><a href="http://localhost:1313/tags/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/">内存管理</a></li>
+      <li><a href="http://localhost:1313/tags/jdk21/">JDK21</a></li>
+      <li><a href="http://localhost:1313/tags/zgc/">ZGC</a></li>
+      <li><a href="http://localhost:1313/tags/%E5%A4%9A%E7%AE%A1%E9%81%93/">多管道</a></li>
+    </ul>
+<nav class="paginav">
+  <a class="prev" href="http://localhost:1313/posts/logstash-debug-platform-design/">
+    <span class="title">« Prev</span>
+    <span>Logstash 调试平台设计：六大核心问题深度分析</span>
+  </a>
+  <a class="next" href="http://localhost:1313/posts/hello/">
+    <span class="title">Next »</span>
+    <span>Hello SoulLand 👋</span>
+  </a>
+</nav>
+
+
+<ul class="share-buttons">
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share Logstash 内存深度分析：1000 管道场景下 128G 内存是否必要？ on x"
+            href="https://x.com/intent/tweet/?text=Logstash%20%e5%86%85%e5%ad%98%e6%b7%b1%e5%ba%a6%e5%88%86%e6%9e%90%ef%bc%9a1000%20%e7%ae%a1%e9%81%93%e5%9c%ba%e6%99%af%e4%b8%8b%20128G%20%e5%86%85%e5%ad%98%e6%98%af%e5%90%a6%e5%bf%85%e8%a6%81%ef%bc%9f&amp;url=http%3a%2f%2flocalhost%3a1313%2fposts%2flogstash-jvm-memory-and-1000-pipelines%2f&amp;hashtags=Logstash%2cJVM%2c%e5%86%85%e5%ad%98%e7%ae%a1%e7%90%86%2cJDK21%2cZGC%2c%e5%a4%9a%e7%ae%a1%e9%81%93">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M512 62.554 L 512 449.446 C 512 483.97 483.97 512 449.446 512 L 62.554 512 C 28.03 512 0 483.97 0 449.446 L 0 62.554 C 0 28.03 28.029 0 62.554 0 L 449.446 0 C 483.971 0 512 28.03 512 62.554 Z M 269.951 190.75 L 182.567 75.216 L 56 75.216 L 207.216 272.95 L 63.9 436.783 L 125.266 436.783 L 235.9 310.383 L 332.567 436.783 L 456 436.783 L 298.367 228.367 L 432.367 75.216 L 371.033 75.216 Z M 127.633 110 L 164.101 110 L 383.481 400.065 L 349.5 400.065 Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share Logstash 内存深度分析：1000 管道场景下 128G 内存是否必要？ on linkedin"
+            href="https://www.linkedin.com/shareArticle?mini=true&amp;url=http%3a%2f%2flocalhost%3a1313%2fposts%2flogstash-jvm-memory-and-1000-pipelines%2f&amp;title=Logstash%20%e5%86%85%e5%ad%98%e6%b7%b1%e5%ba%a6%e5%88%86%e6%9e%90%ef%bc%9a1000%20%e7%ae%a1%e9%81%93%e5%9c%ba%e6%99%af%e4%b8%8b%20128G%20%e5%86%85%e5%ad%98%e6%98%af%e5%90%a6%e5%bf%85%e8%a6%81%ef%bc%9f&amp;summary=Logstash%20%e5%86%85%e5%ad%98%e6%b7%b1%e5%ba%a6%e5%88%86%e6%9e%90%ef%bc%9a1000%20%e7%ae%a1%e9%81%93%e5%9c%ba%e6%99%af%e4%b8%8b%20128G%20%e5%86%85%e5%ad%98%e6%98%af%e5%90%a6%e5%bf%85%e8%a6%81%ef%bc%9f&amp;source=http%3a%2f%2flocalhost%3a1313%2fposts%2flogstash-jvm-memory-and-1000-pipelines%2f">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share Logstash 内存深度分析：1000 管道场景下 128G 内存是否必要？ on reddit"
+            href="https://reddit.com/submit?url=http%3a%2f%2flocalhost%3a1313%2fposts%2flogstash-jvm-memory-and-1000-pipelines%2f&title=Logstash%20%e5%86%85%e5%ad%98%e6%b7%b1%e5%ba%a6%e5%88%86%e6%9e%90%ef%bc%9a1000%20%e7%ae%a1%e9%81%93%e5%9c%ba%e6%99%af%e4%b8%8b%20128G%20%e5%86%85%e5%ad%98%e6%98%af%e5%90%a6%e5%bf%85%e8%a6%81%ef%bc%9f">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share Logstash 内存深度分析：1000 管道场景下 128G 内存是否必要？ on facebook"
+            href="https://facebook.com/sharer/sharer.php?u=http%3a%2f%2flocalhost%3a1313%2fposts%2flogstash-jvm-memory-and-1000-pipelines%2f">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share Logstash 内存深度分析：1000 管道场景下 128G 内存是否必要？ on whatsapp"
+            href="https://api.whatsapp.com/send?text=Logstash%20%e5%86%85%e5%ad%98%e6%b7%b1%e5%ba%a6%e5%88%86%e6%9e%90%ef%bc%9a1000%20%e7%ae%a1%e9%81%93%e5%9c%ba%e6%99%af%e4%b8%8b%20128G%20%e5%86%85%e5%ad%98%e6%98%af%e5%90%a6%e5%bf%85%e8%a6%81%ef%bc%9f%20-%20http%3a%2f%2flocalhost%3a1313%2fposts%2flogstash-jvm-memory-and-1000-pipelines%2f">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share Logstash 内存深度分析：1000 管道场景下 128G 内存是否必要？ on telegram"
+            href="https://telegram.me/share/url?text=Logstash%20%e5%86%85%e5%ad%98%e6%b7%b1%e5%ba%a6%e5%88%86%e6%9e%90%ef%bc%9a1000%20%e7%ae%a1%e9%81%93%e5%9c%ba%e6%99%af%e4%b8%8b%20128G%20%e5%86%85%e5%ad%98%e6%98%af%e5%90%a6%e5%bf%85%e8%a6%81%ef%bc%9f&amp;url=http%3a%2f%2flocalhost%3a1313%2fposts%2flogstash-jvm-memory-and-1000-pipelines%2f">
+            <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share Logstash 内存深度分析：1000 管道场景下 128G 内存是否必要？ on ycombinator"
+            href="https://news.ycombinator.com/submitlink?t=Logstash%20%e5%86%85%e5%ad%98%e6%b7%b1%e5%ba%a6%e5%88%86%e6%9e%90%ef%bc%9a1000%20%e7%ae%a1%e9%81%93%e5%9c%ba%e6%99%af%e4%b8%8b%20128G%20%e5%86%85%e5%ad%98%e6%98%af%e5%90%a6%e5%bf%85%e8%a6%81%ef%bc%9f&u=http%3a%2f%2flocalhost%3a1313%2fposts%2flogstash-jvm-memory-and-1000-pipelines%2f">
+            <svg version="1.1" xml:space="preserve" width="30px" height="30px" viewBox="0 0 512 512" fill="currentColor"
+                xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape">
+                <path
+                    d="M449.446 0C483.971 0 512 28.03 512 62.554L512 449.446C512 483.97 483.97 512 449.446 512L62.554 512C28.03 512 0 483.97 0 449.446L0 62.554C0 28.03 28.029 0 62.554 0L449.446 0ZM183.8767 87.9921H121.8427L230.6673 292.4508V424.0079H281.3328V292.4508L390.1575 87.9921H328.1233L256 238.2489z" />
+            </svg>
+        </a>
+    </li>
+</ul>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2026 <a href="http://localhost:1313/">SoulLand</a></span> · 
+
+    
+    
+    <span>
+        Powered by
+        <a href="https://gohugo.io/?utm_source=papermod" rel="noopener" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" id="top-link" class="top-link hidden" aria-label="go to top" title="Go to Top (Alt + G)" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevrons-up">
+        <polyline points="17 11 12 6 7 11"></polyline>
+        <polyline points="17 18 12 13 7 18"></polyline>
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu');
+    if (menu) {
+        
+        const scrollPosition = localStorage.getItem("menu-scroll-position");
+        if (scrollPosition) {
+            menu.scrollLeft = parseInt(scrollPosition, 10);
+        }
+        
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var toplink = document.getElementById("top-link");
+    window.onscroll = function () {
+        const scrollThreshold = window.innerHeight;
+        if (document.body.scrollTop > scrollThreshold || document.documentElement.scrollTop > scrollThreshold) {
+            toplink.classList.remove("hidden");
+        } else {
+            toplink.classList.add("hidden");
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        const html = document.querySelector("html");
+        if (html.dataset.theme === "dark") {
+            html.dataset.theme = 'light';
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            html.dataset.theme = 'dark';
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>
